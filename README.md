@@ -4,4 +4,10 @@ Initial repository for a thesis to verify the innate preferences of typological 
 
 ## Dataset
 
-We are trying Wiki-40b at this point.
+We are trying Wiki-40b English version at this point. 
+Download the data into text files by running `src/data_processing/wiki_40b.py`
+
+## Parser
+
+A detailed README is in the `src/counterfactual` directory.
+
