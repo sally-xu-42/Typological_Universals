@@ -6,6 +6,10 @@
 #   --data_dir path/to/save --output_prefix path/to/output --num_train_tokens 20000000 \
 #   --num_test_tokens 1000000 --lang_code_list en,fr,es
 
+# Run before running experiments to obtain data. Run from the root directory using shell script
+# if you want to run from the current directory, change two defaults output path to:
+# ../../data instead of ./data
+
 import tensorflow as tf
 import tensorflow_datasets as tfds
 import numpy as np
@@ -104,13 +108,13 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--output_prefix",
-        default="../../data/wiki40b-txt/",
+        default="./data/wiki40b-txt/",
         help="path to output destination for dataset",
     )
     parser.add_argument("--batch_size", type=int, default=128)
     parser.add_argument(
         "--data_dir",
-        default="../../data/",
+        default="./data/",
         help="path to save data files to"
     )
     args = parser.parse_args()
