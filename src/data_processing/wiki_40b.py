@@ -1,4 +1,3 @@
-#!/usr/local/anaconda3/envs/universals/bin/python
 # Generate text files for Wiki-40b dataset
 # Author: Thomas Hikaru Clark (thclark@mit.edu)
 # Example Usage:

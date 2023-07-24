@@ -15,7 +15,7 @@ workdir="$SLURM_SUBMIT_DIR"  # The value of SLURM_SUBMIT_DIR sets workdir to the
 
 module purge
 module load eth_proxy gcc/8.2.0 python_gpu/3.9.9
-source $workdir/venv/bin/activate
+source $workdir/env1/bin/activate
 
 
 #! Run options for the application:
@@ -33,7 +33,7 @@ echo "Time: `date`"
 echo "Running on master node: `hostname`"
 echo "Current directory: `pwd`"
 
-
+#TODO: modify passing options here
 CMD="$prefix $workdir/$application $options"
 echo -e "\nExecuting command:\n==================\n$CMD\n"
 eval $CMD

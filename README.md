@@ -28,6 +28,12 @@ pip install --ignore-installed --no-cache-dir -r ./src/data_processing/requireme
 ./scripts/data.sh -<language_code>
 ```
 
+If permission denied, try executing:
+
+```
+chmod -R +x ./scripts
+```
+
 For the Greenberg word-order correlation universals, we offer a list of SVO and SOV languages in our writeup.
 You can try Japanese (SOV) and English (SVO) for a taste.
 
@@ -109,3 +115,5 @@ Run a sweep:
 3. ./scripts/train.sh -n <model_name> -l <lang> -w <sweep_id>
 
 ```
+
+You can use ```squeue``` to check the status of your batch jobs, and use ```scancel <JOBID>``` to cancel jobs.
