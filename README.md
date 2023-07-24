@@ -5,25 +5,59 @@ Initial repository for a thesis to verify the innate preferences of typological 
 ## Dataset
 
 We are trying Wiki-40b English version at this point. 
-Download the data into text files by running `src/data_processing/wiki_40b.py`
+Local: Download the data into text files by running `src/data_processing/wiki_40b.py`
+Euler: Continue reading the following sections.
 
 ## Parser
 
 A detailed README is in the `src/counterfactual` directory.
 
+## Preprocessing to get clean data
+
+Run the following command before you start training on a dataset, if you haven't downloaded Wiki-40b before.
+Note that we need to create two different virtual environments to avoid package conflicts between Tensorflow and PyTorch.
+
+```
+module load eth_proxy gcc/8.2.0 python_gpu/3.9.9
+python -m venv env1
+source ./env1/bin/activate
+
+pip install --upgrade pip
+pip install --ignore-installed --no-cache-dir -r ./src/data_processing/requirements.txt
+
+./scripts/data.sh -<language_code>
+```
+
+For the Greenberg word-order correlation universals, we offer a list of SVO and SOV languages in our writeup.
+You can try Japanese (SOV) and English (SVO) for a taste.
+
 ## Creating environment on Euler
 
 Make sure you are in the root of your project.
 
+If you have activated a virtual environment already, run the following command:
+
+```
+deactivate
+```
+
+If you want to delete a virtual environment and the packages it contains, run the following command:
+
+```
+rm -r <env_folder_name>
+```
+
+Then:
+
 ```
 module load eth_proxy gcc/8.2.0 python_gpu/3.9.9
-python -m venv venv
-source ./venv/bin/activate
+python -m venv env2
+source ./env2/bin/activate
 
 pip install --upgrade pip
 ```
 
-Whenever you install a new package, make sure your venv is activated!
+Whenever you install a new package, make sure the correct venv is activated!
 
 To install new packages:
 
@@ -47,23 +81,12 @@ OPENBLAS=$OPENBLAS_ROOT/lib/libopenblas.so pip install --ignore-installed --no-c
 
 You might also want to login to your wandb account (only once): ```wandb login```
 
-## Preprocessing to get clean data
-
-Run the following command before you start training on a dataset, if you haven't downloaded Wiki-40b before.
-
-```
-./scripts/data.sh -<language_code>
-```
-
-For the Greenberg word-order correlation universals, we offer a list of SVO and SOV languages in our writeup.
-You can try Japanese (SOV) and English (SVO) for a taste.
-
 ## Training a language model on Euler
 
 Before running the scripts, make sure you modify the *.euler files accordingly:
 
 * Modify SBATCH options (e.g. resource requests) 
-* Modify the venv source path: ```source <path_to_project>/venv/bin/activate```
+* Modify the venv source path: ```source <path_to_project>/env2/bin/activate```
 
 Run the scripts from the project root.
 
