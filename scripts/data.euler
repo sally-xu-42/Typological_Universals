@@ -21,7 +21,13 @@ source $workdir/env1/bin/activate
 #! Run options for the application:
 prefix="python3"
 application="src/data_processing/wiki_40b.py"
-options="${LANGUAGE}"
+options=" --lang_code_list ${LANGUAGE} \
+        --num_train_tokens ${TRAIN_SAMPLE} \
+        --num_test_tokens ${TEST_SAMPLE} \
+        --num_valid_tokens ${VALID_SAMPLE} \
+        --output_prefix ${OUTPUT_DIR} \
+        --batch_size ${BATCH_SIZE} \
+        --data_dir ${SAVE_DIR}"
 
 
 cd $workdir
