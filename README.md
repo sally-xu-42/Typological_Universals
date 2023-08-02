@@ -32,6 +32,7 @@ If permission denied, try executing:
 
 ```
 chmod -R +x ./scripts
+chmod -R +x ./src
 ```
 
 For the Greenberg word-order correlation universals, we offer a list of SVO and SOV languages in our writeup.

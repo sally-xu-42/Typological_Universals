@@ -63,7 +63,6 @@ then
   wandb agent --count 5 ${SWEEP_ID}
 
 else
-then
     # Train on one language
     export MODEL_NAME="${MODEL_NAME}"
     export DATA_DIR=${DATA_DIR}

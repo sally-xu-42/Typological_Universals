@@ -1,14 +1,16 @@
 #!/bin/bash
 
+export NCCL_DEBUG=INFO
+
 EXTRA_FLAGS="$@"
 echo $EXTRA_FLAGS
 
 torchrun --nproc_per_node 8 ./src/learn/run_clm.py \
     --model_type gpt2 \
-    --tokenizer_name "${DATA_DIR}/tokenizer/wiki40b-en/gpt2_tokenizer" \
-    --train_file "${DATA_DIR}/wiki40b-txt/en.train" \
-    --validation_file "${DATA_DIR}/wiki40b-txt/en.validation" \
-    --cache_dir "${DATA_DIR}/cache" \
+    --tokenizer_name "data/tokenizer/wiki40b-en/gpt2_tokenizer" \
+    --train_file "data/wiki40b-txt/en_train.txt" \
+    --validation_file "data/wiki40b-txt/en_validation.txt" \
+    --cache_dir "data/cache" \
     --run_name ${MODEL_NAME} \
     --seed ${SEED} \
     --report_to wandb \
@@ -30,5 +32,5 @@ torchrun --nproc_per_node 8 ./src/learn/run_clm.py \
     --low_cpu_mem_usage \
     --fp16 \
     --ddp_backend nccl \
-    --ddp_timeout 7200 \
+    --ddp_timeout 18000 \
     ${EXTRA_FLAGS}

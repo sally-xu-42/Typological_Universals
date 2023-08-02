@@ -7,4 +7,3 @@ If you have activated a virtual environment, run the following command:
 deactivate
 rm -r <env_folder_name>
 ```
-

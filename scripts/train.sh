@@ -2,13 +2,13 @@
 
 model="gpt2"
 lang="en"
-dataset="wiki40b-txt"                               ## dataset="unified_clean"
-seed=0
+dataset="wiki40b"
+seed=42
 project_name="typological-universals"
 do_sweep=false
 do_test=false
 timestamp=$(date +%s)
-# training_mode="sequential"
+
 
 Help()
 {

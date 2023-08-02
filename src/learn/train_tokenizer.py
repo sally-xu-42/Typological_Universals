@@ -20,7 +20,7 @@ def train_tokenizer(model, dataset, lang):
 
     bpe_tokenizer = ByteLevelBPETokenizer()
 
-    files = [f"./data/{dataset}-txt/{lang}.{split}" for split in ["test", "train", "validation"]] # this is always run from root
+    files = [f"./data/{dataset}-txt/{lang}_{split}.txt" for split in ["test", "train", "validation"]] # this is always run from root
 
     bpe_tokenizer.train(files=files, vocab_size=32000, min_frequency=2)
 

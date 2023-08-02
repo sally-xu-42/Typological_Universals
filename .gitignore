@@ -1,5 +1,6 @@
 # Large data files
 data/
+parse/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

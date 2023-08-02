@@ -60,7 +60,7 @@ def process_lang(lang_code, args):
         data_dir=args.data_dir,
         batch_size=args.batch_size,
     )
-    process_tf_dataset(ds, args.num_train_tokens, args.output_prefix + lang_code + ".train")
+    process_tf_dataset(ds, args.num_train_tokens, args.output_prefix + lang_code + "_train.txt")
 
     ds = tfds.load(
         f"wiki40b/{lang_code}",
@@ -69,7 +69,7 @@ def process_lang(lang_code, args):
         data_dir=args.data_dir,
         batch_size=args.batch_size,
     )
-    process_tf_dataset(ds, args.num_test_tokens, args.output_prefix + lang_code + ".test")
+    process_tf_dataset(ds, args.num_test_tokens, args.output_prefix + lang_code + "_test.txt")
 
     ds = tfds.load(
         f"wiki40b/{lang_code}",
@@ -78,7 +78,7 @@ def process_lang(lang_code, args):
         data_dir=args.data_dir,
         batch_size=args.batch_size,
     )
-    process_tf_dataset(ds, args.num_valid_tokens, args.output_prefix + lang_code + ".validation")
+    process_tf_dataset(ds, args.num_valid_tokens, args.output_prefix + lang_code + "_validation.txt")
 
 
 if __name__ == "__main__":
