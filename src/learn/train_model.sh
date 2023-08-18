@@ -5,7 +5,7 @@ export WANDB_PROJECT=$PROJECT
 
 DATE=$(date +%d%m)
 
-DATA_DIR="data/${DATASET}-txt/en.small"       ## testing on small dataset, always run from root directory. Obtain processed data before you run this shell script.
+DATA_DIR="data/${DATASET}-txt"
 MODEL_NAME="${MODEL}-${CONFIG}-${LANG}-${MODE}-${SEED}-${DATE}"
 
 extra_flags=$(<"./src/learn/configs/${MODEL}_${CONFIG}.txt")

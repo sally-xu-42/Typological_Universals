@@ -1,5 +1,6 @@
 # Generate text files for Wiki-40b dataset
 # Author: Thomas Hikaru Clark (thclark@mit.edu)
+# Adopted by: Tianyang Xu
 # Example Usage:
 # python wiki_40b.py 
 #   --data_dir path/to/save --output_prefix path/to/output --num_train_tokens 20000000 \
@@ -8,6 +9,7 @@
 # Run before running experiments to obtain data. Run from the root directory using shell script
 # if you want to run from the current directory, change two defaults output path to:
 # ../../data instead of ./data
+# subsample
 
 import tensorflow as tf
 import tensorflow_datasets as tfds
@@ -22,13 +24,15 @@ r3 = "_START_SECTION_\n[^_]*"
 r4 = "_NEWLINE_"
 
 REGEX = re.compile(f"({r1}|{r2}|{r3}|{r4})")
+LANG_CODE_LIST = ["zh-cn", "ja", "ko"]
 
-def process_tf_dataset(ds, num_tokens, output_file):
+def process_tf_dataset(ds, num_tokens, output_file, lang_code):
     """ 
     Throwing away redundant special symbols, writing txt file from a tensorflow dataset ds
     """
 
     token_count = 0
+    # print(num_tokens)
 
     with open(output_file, "a") as f:
         # Turn to a numpy df so that we can easily extract text
@@ -40,9 +44,16 @@ def process_tf_dataset(ds, num_tokens, output_file):
                 text = re.sub("\s+", " ", text).strip()
                 f.write(text)
                 f.write("\n")
-                token_count += len(text.split())
+                # Create different way of counting number of words for Chinese, Japanese and Korean
+                if lang_code in LANG_CODE_LIST:
+                    text_no_punc = re.sub(r'[^\w\s]', '', text)
+                    token_count += len(text_no_punc)
+                else:
+                    token_count += len(text.split())
                 if num_tokens > 0 and token_count > num_tokens:
                     break
+            if num_tokens > 0 and token_count > num_tokens:
+                break
 
 def process_lang(lang_code, args):
     """
@@ -60,7 +71,11 @@ def process_lang(lang_code, args):
         data_dir=args.data_dir,
         batch_size=args.batch_size,
     )
-    process_tf_dataset(ds, args.num_train_tokens, args.output_prefix + lang_code + "_train.txt")
+    process_tf_dataset(ds, args.num_train_tokens, args.output_prefix + lang_code + "_train.txt", lang_code)
+    # if args.num_train_tokens > 0:
+    #     process_tf_dataset(ds, args.num_train_tokens, args.output_prefix + lang_code + "_train_" + str(args.num_train_tokens) +".txt")
+    # else:
+    #   process_tf_dataset(ds, args.num_train_tokens, args.output_prefix + lang_code + "_train.txt")
 
     ds = tfds.load(
         f"wiki40b/{lang_code}",
@@ -69,7 +84,7 @@ def process_lang(lang_code, args):
         data_dir=args.data_dir,
         batch_size=args.batch_size,
     )
-    process_tf_dataset(ds, args.num_test_tokens, args.output_prefix + lang_code + "_test.txt")
+    process_tf_dataset(ds, args.num_test_tokens, args.output_prefix + lang_code + "_test.txt", lang_code)
 
     ds = tfds.load(
         f"wiki40b/{lang_code}",
@@ -78,7 +93,7 @@ def process_lang(lang_code, args):
         data_dir=args.data_dir,
         batch_size=args.batch_size,
     )
-    process_tf_dataset(ds, args.num_valid_tokens, args.output_prefix + lang_code + "_validation.txt")
+    process_tf_dataset(ds, args.num_valid_tokens, args.output_prefix + lang_code + "_validation.txt", lang_code)
 
 
 if __name__ == "__main__":

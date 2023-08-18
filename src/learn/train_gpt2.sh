@@ -7,9 +7,9 @@ echo $EXTRA_FLAGS
 
 torchrun --nproc_per_node 8 ./src/learn/run_clm.py \
     --model_type gpt2 \
-    --tokenizer_name "data/tokenizer/wiki40b-en/gpt2_tokenizer" \
-    --train_file "data/wiki40b-txt/en_train.txt" \
-    --validation_file "data/wiki40b-txt/en_validation.txt" \
+    --tokenizer_name "data/tokenizer/${DATASET}-${LANG}/gpt2_tokenizer" \
+    --train_file "${DATA_DIR}/${LANG}_train.txt" \
+    --validation_file "${DATA_DIR}/${LANG}_validation.txt" \
     --cache_dir "data/cache" \
     --run_name ${MODEL_NAME} \
     --seed ${SEED} \
