@@ -12,7 +12,7 @@ Help()
    echo "Syntax: parse.sh [-l|u|d|p|c|T]"
    echo "options:"
    echo "l     2-letter language code to parse, e.g. 'en,ja'. Default: en"
-   echo "u     Path to UDPipe model file for this language. Default: english-lines-ud-2.5-191206.udpipe"
+   echo "u     Path to UDPipe model file for this language. Default: udpipe_models/english-lines-ud-2.5-191206.udpipe"
    echo "d     Path to data directory with plain txt files. Default: ./data/wiki40b-txt"
    echo "p     Path to store CONLLU parses. Default: ./parse"
    echo "c     Comma-separated list of partitions. Default: train,test,validation"
@@ -63,6 +63,6 @@ echo "Test mode: $do_test"
 # Set default value if ${TRAIN_SAMPLE} is not set or empty
 # TRAIN_SAMPLE="${TRAIN_SAMPLE:-default_value}"
 
-LANGUAGE=${language} MODEL_PATH="${model_path:-'english-lines-ud-2.5-191206.udpipe'}" DATA_DIR="${data_dir:-'./data/wiki40b-txt/'}" \
+LANGUAGE=${language} MODEL_PATH="${model_path:-'udpipe_models/english-lines-ud-2.5-191206.udpipe'}" DATA_DIR="${data_dir:-'./data/wiki40b-txt/'}" \
 PARSE_DIR="${parse_dir:-'./parse'}" LIST_PARTITIONS="${list_partitions:-'train,test,validation'}" DO_TEST=${do_test} \
 sbatch --output="./logs/parsing/dep_${language}_${timestamp}.out" scripts/depparse.euler
