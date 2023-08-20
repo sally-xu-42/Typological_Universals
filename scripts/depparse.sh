@@ -15,7 +15,7 @@ Help()
    echo "u     Path to UDPipe model file for this language. Default: english-lines-ud-2.5-191206.udpipe"
    echo "d     Path to data directory with plain txt files. Default: ./data/wiki40b-txt"
    echo "p     Path to store CONLLU parses. Default: ./parse"
-   echo "c     Comma-separated list of partitions. Default: train,test,valid"
+   echo "c     Comma-separated list of partitions. Default: train,test,validation"
    echo "T     Test run."
 
    echo
@@ -64,5 +64,5 @@ echo "Test mode: $do_test"
 # TRAIN_SAMPLE="${TRAIN_SAMPLE:-default_value}"
 
 LANGUAGE=${language} MODEL_PATH="${model_path:-'english-lines-ud-2.5-191206.udpipe'}" DATA_DIR="${data_dir:-'./data/wiki40b-txt/'}" \
-PARSE_DIR="${parse_dir:-'./parse'}" LIST_PARTITIONS="${list_partitions:-'train,test,valid'}" DO_TEST=${do_test} \
+PARSE_DIR="${parse_dir:-'./parse'}" LIST_PARTITIONS="${list_partitions:-'train,test,validation'}" DO_TEST=${do_test} \
 sbatch --output="./logs/parsing/dep_${language}_${timestamp}.out" scripts/depparse.euler

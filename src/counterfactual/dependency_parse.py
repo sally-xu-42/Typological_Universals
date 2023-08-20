@@ -45,7 +45,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--partitions",
-        default="train,test,valid",
+        default="train,test,validation",
         help="comma-seprated list of partitions",
     )
     parser.add_argument("--test_run", action="store_true")
