@@ -1,0 +1,3 @@
+Language: English, Model: 6448967977
+Avg Sentence Length: 18.0
+Avg Dependency Length: 38.5

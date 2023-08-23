@@ -1,21 +1,20 @@
 # Applying a counterfactual grammar to a language dataset
-# Original Author: Michael Hahn, Thomas Hikaru Clark (thclark@mit.edu)
+# Original Author: Michael Hahn
 # Adapted by: Tianyang Xu
 
 # Usage example (running a grammar optimized for overall efficiency):
 # python3 apply_counterfactual_grammar.py \
 #   --language English \
-#   --model 7580379440 \
+#   --model RANDOM_3 \
 #   --base_dir manual_output_funchead_two_coarse_lambda09_best_large \
 #   --filename english_sample.conllu
+#   --output en_approx.txt
 
-from collections import defaultdict
 import re
 import sys
 import random
 import argparse
 import os
-from importlib_metadata import itertools
 import pandas as pd
 import numpy as np
 import torch
@@ -26,13 +25,11 @@ import json
 from iso_639 import lang_codes
 from variant_name2id import name2id
 
-# import spacy, neuralcoref
-# from spacy.tokens import Doc
-
 recursionlimit = sys.getrecursionlimit()
 sys.setrecursionlimit(min(4000, 2 * recursionlimit))
 
-NON_PARAM_ORDERS = ["REAL_REAL", "REVERSE", "SORT_FREQ", "SORT_FREQ_REV", "MIN_DL_PROJ"]
+NON_PARAM_ORDERS = ["REAL_REAL"]
+NON_SPACE_LANG = ["zh-cn", "ja", "ko"]
 
 
 def makeCoarse(x):
@@ -68,90 +65,7 @@ def initializeOrderTable(filename, language):
             depsVocab.add(line["coarse_dep"])
     return depsVocab
 
-
-def subtree_len(sentence, root_index):
-    """Recursively calculate the size of the subtree in the given sentence
-    that begins at root_index
-
-    Args:
-        sentence (list[dict[str,str]]): sentence object, list of field-value mappings
-        root_index (int): 1-indexed index of root of this sentence
-
-    Returns:
-        _type_: _description_
-    """
-    length = 0
-    children = [word for word in sentence if word["head"] == root_index]
-
-    if len(children) == 0:
-        return 1
-
-    for child in children:
-        length += subtree_len(sentence, child["index"])
-    return length
-
-
-def _linearize_mindl_rec(sentence, root_index, add_right):
-    """Recursive helper function for linearizing a sentence to minimze DL
-
-    Args:
-        sentence (list[dict[str,str]]): sentence object, a list of field-value mappings
-        root_index (int): the 1-indexed index of the root of the subtree under consideration
-        add_right (bool): True if the current subtree is being added to the right of the root
-
-    Returns:
-        _type_: _description_
-    """
-
-    children = sorted(
-        [word for word in sentence if word["head"] == root_index],
-        key=lambda x: subtree_len(sentence, x["index"]),
-    )
-
-    subtrees = [[word for word in sentence if word["index"] == root_index]]
-
-    # Very important and tricky:
-    #   if there are an even number of children, start adding children on the opposite side from the link to parent
-    #   if there are an odd number of children, start adding children on the same side as the link to parent
-    # This ensures that the longest child (they are already sorted by length) gets added on the opposite side
-    # as the link to parent (see Gildea and Temperley, 2007, p187)
-    # Base case: one child. It should be added on the opposite side as the link to the parent, which
-    # counterintuitively means that the recursive function should be called with the same value of add_right
-    # as the call from the parent that led here.
-    right = (not add_right) ^ (len(children) % 2 == 1)
-
-    for child in children:
-        if right:
-            subtrees.append(_linearize_mindl_rec(sentence, child["index"], right))
-        else:
-            subtrees.insert(0, _linearize_mindl_rec(sentence, child["index"], right))
-        right = not right
-
-    x = list(itertools.chain.from_iterable(subtrees))
-    return x
-
-
-def linearize_mindl(sentence):
-    """Linearize a dependency tree to minimize total DL under projectivity constraint.
-
-    Args:
-        sentence (list[dict[str,str]]): sentence object, a list of field-value mappings
-
-    Raises:
-        ValueError: if sentence does not have exactly one root
-
-    Returns:
-        list[dict[str,str]]: re-ordered sentence object (original indices preserved).
-    """
-
-    root = list(filter(lambda x: x["dep"] == "root", sentence))
-    if len(root) != 1:
-        raise ValueError(f"Expected exactly one root node, got {len(root)}.")
-    root_index = root[0]["index"]
-    new_sent = _linearize_mindl_rec(sentence, root_index, True)
-    return new_sent
-
-
+# TODO:read this. Recursive traversal?
 def recursivelyLinearize(sentence, position, result, gradients_from_the_left_sum):
     line = sentence[position - 1]
     allGradients = gradients_from_the_left_sum
@@ -176,7 +90,7 @@ def orderChildrenRelative(sentence, remainingChildren, reverseSoftmax, distanceW
     return childrenLinearized
 
 
-def orderSentence(sentence, model, dhWeights, distanceWeights, freqs=None, debug=False):
+def orderSentence(sentence, model, dhWeights, distanceWeights, debug=False):
     """Linearize a sentence under a given grammar, parametrized by the given
     dependency-head directionality weights and distance weights
 
@@ -190,10 +104,12 @@ def orderSentence(sentence, model, dhWeights, distanceWeights, freqs=None, debug
     Returns:
         List[Dict[str->str]]: _description_
     """
+    # keep track of the root
     root = None
 
     # for non-parametric orderings, some items will be eliminated (punctuation)
     if model in NON_PARAM_ORDERS:
+        # list of word's dicts
         eliminated = []
 
     # iterate over lines in the parse (i.e. over words in the sentence)
@@ -202,7 +118,7 @@ def orderSentence(sentence, model, dhWeights, distanceWeights, freqs=None, debug
         # make the dependency relation label coarse (ignore stuff after colon)
         line["coarse_dep"] = makeCoarse(line["dep"])
 
-        # identify the root
+        # identify the root, and skip to next word
         if line["coarse_dep"] == "root":
             root = line["index"]
             continue
@@ -214,11 +130,12 @@ def orderSentence(sentence, model, dhWeights, distanceWeights, freqs=None, debug
                 eliminated.append(line)
             continue
 
-        # this will be used later
+        # this will be used later, a coarse deprel, not being root or punct
         key = line["coarse_dep"]
         line["dependency_key"] = key
 
         # set the dependent-head directionality based on dhWeights
+        # add line to its head's children list
         direction = (
             "DH" if model in NON_PARAM_ORDERS or dhWeights.get(key) > 0 else "HD"
         )
@@ -245,26 +162,6 @@ def orderSentence(sentence, model, dhWeights, distanceWeights, freqs=None, debug
         # a sentence is a list of dicts; filter out dicts that were removed
         linearized = list(filter(lambda x: "removed" not in x, sentence))
 
-        # handle REVERSE (reverse of original order)
-        if model == "REVERSE":
-            linearized = linearized[::-1]
-
-        # handle SORT_FREQ (highest to lowest word frequency)
-        if model == "SORT_FREQ":
-            linearized = sorted(
-                linearized, key=lambda x: freqs.get(x["word"], 0.0), reverse=True
-            )
-
-        # handle SORT_FREQ_REV (lowest to highest word frequency)
-        if model == "SORT_FREQ_REV":
-            linearized = sorted(
-                linearized, key=lambda x: freqs.get(x["word"], 0.0), reverse=False
-            )
-
-        # handle MIN_DL_PROJ (minimum dependency length with projectivity constraint)
-        if model == "MIN_DL_PROJ":
-            linearized = linearize_mindl(linearized)
-
     # for other orderings, order children using orderChildrenRelative()
     else:
         for line in sentence:
@@ -279,8 +176,9 @@ def orderSentence(sentence, model, dhWeights, distanceWeights, freqs=None, debug
                 )
                 line["children_HD"] = childrenLinearized
 
-        # recursively linearize a sentence
+        # recursively linearize a sentence, after every word's children list is permuted
         linearized = []
+        # TODO: gradient is the variable...but why? what will happen if I change this tensor to 100?
         recursivelyLinearize(
             sentence, root, linearized, Variable(torch.FloatTensor([0.0]))
         )
@@ -327,17 +225,15 @@ def get_model_specs(args):
     # c) an optimized grammar from a grammar file (denoted by a numeric ID)
     #    i) optimized for efficiency (joint predictability and parseability)
     #   ii) optimized for DLM (while still being a consistent grammar)
-    # d) REVERSE - mirror image version of REAL_REAL
-    # e) SORT_FREQ - tokens sorted by word frequency, high to low
-    # f) SORT_FREQ_REV - tokens sorted by word frequency, low to high
-    # g) MIN_DL_PROJ - tokens linearized to minimize total DL for each sentence
+    # d) REV grammar - reversing an existing pair of <X, Y>
+    # only b) and d) are non-parametric
 
     # handle the grammar specification and populate the dhWeights and distanceWeights dicts
     if args.model in NON_PARAM_ORDERS:
         return dhWeights, distanceWeights
     if args.model.startswith("RANDOM"):  # a random ordering
 
-        # read the grammar file
+        # read the efficient grammar file only to get deprels
         grammar_file = os.path.join(args.base_dir, "auto-summary-lstm.tsv")
         df = pd.read_csv(grammar_file, sep="\t")
 
@@ -352,20 +248,13 @@ def get_model_specs(args):
         sys.stderr.write("distanceWeights\n" + json.dumps(distanceWeights) + "\n")
         return dhWeights, distanceWeights
 
-    if args.model == "FREQ_OPT":
-        grammar_file = os.path.join(args.base_dir_freqopt, f"{args.language}.tsv")
-        df = pd.read_csv(grammar_file, sep="\t")
-        dhWeights = dict(zip(df["Dependency"], map(float, df["DH_Weight"])))
-        distanceWeights = dict(zip(df["Dependency"], map(float, df["DistanceWeight"])))
-        return dhWeights, distanceWeights
-
-    # if model is not in NON_PARAM_ORDERS or FREQ_OPT, it should be numeric ID
+    # if model is not in NON_PARAM_ORDERS, it should be numeric ID
     if not args.model.isnumeric():
         raise ValueError(
             f"Model must be numeric or one of {NON_PARAM_ORDERS} but got {args.model}"
         )
 
-    # load two sets of grammars - optimized, and approximations to real grammars
+    # load three sets of grammars - optimized, approximations to real grammars, and min-DL grammar
     grammars_optim = os.path.join(args.base_dir, "auto-summary-lstm.tsv")
     grammars_approx = os.path.join(args.base_dir_approx, "auto-summary-lstm.tsv")
     grammars_mindl = os.path.join(args.base_dir_mindl, "auto-summary-lstm.tsv")
@@ -438,96 +327,6 @@ def reorder_heads(sentence):
             word["reordered_head"] = 0
 
 
-def coref_analysis(corpusIterator, nlp, dhWeights, distanceWeights, args):
-
-    current_doc = []
-    current_doc_positions = []
-    coref_dists = []
-
-    for i, (sentence, newdoc) in enumerate(corpusIterator):
-
-        # upon starting a new document
-        if newdoc and i > 0:
-
-            # concatenate words in current document
-            doc_str = " ".join(current_doc)
-            doc = nlp(doc_str)
-            clusters = doc._.coref_clusters
-
-            # word position in spacy document -> word position in reordered document
-            mapping = dict(
-                zip(current_doc_positions, range(len(current_doc_positions)))
-            )
-
-            # for each coreference cluster
-            for cluster in clusters:
-
-                # add the start index (in transformed data) of each mention
-                mention_starts = []
-                for mention in cluster.mentions:
-                    if mention.start in mapping:
-                        mention_starts.append(mapping[mention.start])
-                    else:
-                        print("\t**", mention, mention.start)
-
-                if len(mention_starts) < 2:
-                    continue
-
-                # sort by position and find the pairwise distances from
-                # first mention to each subsequent mention
-                mention_starts = sorted(mention_starts)
-                for ms in mention_starts[1:]:
-                    dist = abs(mention_starts[0] - ms)
-                    if dist > 0 and dist <= 25:
-                        coref_dists.append(dist)
-
-            # reset for next document
-            current_doc = []
-            current_doc_positions = []
-
-        # position in sentence + offset = position in document
-        offset = len(current_doc)
-
-        # this includes punctuation
-        words = [x["word"] for x in sentence]
-        current_doc.extend(words)
-
-        # reordered sentence, this excludes punctuation
-        ordered = list(
-            orderSentence(sentence, args.model, dhWeights, distanceWeights, freqs)
-        )
-        current_doc_positions.extend([x["index"] - 1 + offset for x in ordered])
-
-    # handle final document in dataset (not followed by #newdoc)
-    if len(current_doc) > 0:
-        doc_str = " ".join(current_doc)
-        doc = nlp(doc_str)
-        clusters = doc._.coref_clusters
-
-        mapping = dict(zip(current_doc_positions, range(len(current_doc_positions))))
-
-        for cluster in clusters:
-
-            mention_starts = []
-            for mention in cluster.mentions:
-                if mention.start in mapping:
-                    mention_starts.append(mapping[mention.start])
-                else:
-                    print("\t**", mention, mention.start)
-
-            if len(mention_starts) < 2:
-                continue
-
-            mention_starts = sorted(mention_starts)
-            for ms in mention_starts[1:]:
-                dist = abs(mention_starts[0] - ms)
-                if dist > 0 and dist <= 25:
-                    coref_dists.append(dist)
-
-    # print(coref_dists)
-    print("mean coref dist:", np.mean(coref_dists), np.std(coref_dists))
-
-
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
@@ -536,33 +335,33 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--model",
-        help="type of model, e.g. RANDOM, REAL_REAL, or numerical ID of grammar",
+        help="type of model, e.g. RANDOM, REAL_REAL, APPROX, or numerical ID of grammar",
         default="REAL_REAL",
     )
     parser.add_argument(
         "--base_dir",
         help="base directory of grammar file",
-        default="grammars/manual_output_funchead_two_coarse_lambda09_best_large",
+        default="../../grammars/manual_output_funchead_two_coarse_lambda09_best_large",
     )
     parser.add_argument(
         "--base_dir_approx",
         help="base directory of grammar file for approximations to real grammars",
-        default="grammars/manual_output_funchead_ground_coarse_final",
+        default="../../grammars/manual_output_funchead_ground_coarse_final",
     )
     parser.add_argument(
         "--base_dir_mindl",
         help="base directory of file for grammars optimized for DLM",
-        default="grammars/manual_output_funchead_coarse_depl_balanced",
-    )
-    parser.add_argument(
-        "--base_dir_freqopt",
-        help="base directory for grammars optimized for high-frequency first",
-        default="../grammars/freq_opt",
+        default="../../grammars/manual_output_funchead_coarse_depl_balanced",
     )
     parser.add_argument(
         "--filename",
         help="filename of CONLLU data",
-        default="../data/wiki40b-txt-parsed/en.tiny.conllu",
+        default="../../parse/en_tiny.conllu",
+    )
+    parser.add_argument(
+        "--output",
+        help="output file of plain reordered text according to counterfactual grammar applied",
+        default="../../en_random.txt"
     )
     parser.add_argument(
         "--seed", help="random seed for making RANDOM grammars", type=int, default=1
@@ -572,14 +371,6 @@ if __name__ == "__main__":
         action="store_true",
         help="if set, will only output avg dependency length for a dataset/grammar",
     )
-    parser.add_argument("--freq_opt", action="store_true")
-    parser.add_argument("--coref_analysis", action="store_true")
-    parser.add_argument(
-        "--freq_dir",
-        default="freqs",
-        help="directory containing word frequency data for a language",
-    )
-    parser.add_argument("--debug_dl", action="store_true")
     args = parser.parse_args()
 
     # check args
@@ -589,23 +380,12 @@ if __name__ == "__main__":
         args.language = lang_codes[args.language]
     lang_codes_inv = {v: k for k, v in lang_codes.items()}
 
-    if args.freq_opt:
-        assert args.model == "REAL_REAL"
-
-    # convert convenience name to numeric ID, if applicable
+    # convert convenience name like "APPROX" to numeric model ID, if applicable
     lang_code = lang_codes_inv[args.language]
     if lang_code not in name2id.keys():
-        raise ValueError(f"Specified language is invalid: {args.language}")
+        raise ValueError(f"Specified language doesn't exists in our models: {args.language}")
     if args.model in name2id[lang_code].keys():
         args.model = name2id[lang_code][args.model]
-
-    # load frequencies
-    freqs = {}
-    if args.model in ["SORT_FREQ", "SORT_FREQ_REV"] or args.freq_opt:
-        freq_path = os.path.join(args.freq_dir, f"{lang_codes_inv[args.language]}.csv")
-        freqs = pd.read_csv(freq_path)
-        freqs = freqs.groupby("word").sum().reset_index()
-        freqs = dict(zip(freqs.word, freqs.freq))
 
     # handle RANDOM-XX
     if args.model.startswith("RANDOM"):
@@ -622,93 +402,39 @@ if __name__ == "__main__":
     )
     corpusIterator = corpus.iterator()
 
-    # For debugging dependency length minimization
-    if args.debug_dl:
-        sentence, newdoc = next(corpusIterator)
-        print("\n".join("\t".join(str(x) for x in word.values()) for word in sentence))
-        reorder_heads(sentence)
-        print(get_dl(sentence))
-        print()
-
-        sentence = linearize_mindl(sentence)
-        print("\n".join("\t".join(str(x) for x in word.values()) for word in sentence))
-        reorder_heads(sentence)
-        print(get_dl(sentence))
-        quit()
-
-    # generate a grammar that is optimized for putting high-frequency words early in sent
-    if args.freq_opt:
-
-        rel_weights = defaultdict(list)
-
-        for i, (sentence, newdoc) in enumerate(corpusIterator):
-            ordered = list(
-                orderSentence(sentence, args.model, dhWeights, distanceWeights, freqs)
-            )
-            idx2word = dict(
-                zip([w["index"] for w in ordered], [w["word"] for w in ordered])
-            )
-
-            for j, row in enumerate(ordered):
-                if row["head"] == 0:
-                    continue
-                head_word = idx2word[row["head"]]
-                head_freq = freqs.get(head_word, 0.0)
-                child_freq = freqs.get(row["word"], 0.0)
-                dep_name = makeCoarse(row["dep"])
-                rel_weights[dep_name].append(1 if head_freq < child_freq else -1)
-
-        rel_weights_final = {k: np.mean(v) for k, v in rel_weights.items()}
-
-        df = pd.DataFrame(
-            {
-                "Language": args.language,
-                "Dependency": rel_weights_final.keys(),
-                "DH_Weight": rel_weights_final.values(),
-                "DistanceWeight": rel_weights_final.values(),
-            }
-        )
-        df.to_csv(f"{args.base_dir_freqopt}/{args.language}.tsv", index=False, sep="\t")
-        quit()
-
-    # For coreference analysis - currently disabled
-    if args.coref_analysis:
-        # nlp = spacy.load("en_core_web_sm")
-
-        # def custom_tokenizer(text):
-        #     return Doc(nlp.vocab, text.split())
-
-        # nlp.tokenizer = custom_tokenizer
-        # neuralcoref.add_to_pipe(nlp, max_dist=50, max_dist_match=50, greedyness=0.5)
-        # coref_analysis(corpusIterator, nlp, dhWeights, distanceWeights, args)
-        quit()
-
     # For outputting dependency length of datasets under different grammars
     if args.output_dl_only:
         dep_lens, sent_lens = [], []
         for i, (sentence, newdoc) in enumerate(corpusIterator):
             ordered = list(
-                orderSentence(sentence, args.model, dhWeights, distanceWeights, freqs)
+                orderSentence(sentence, args.model, dhWeights, distanceWeights)
             )
             if args.model in NON_PARAM_ORDERS:
                 reorder_heads(ordered)
             dep_lens.append(get_dl(ordered))
             sent_lens.append(len(ordered))
-        sys.stdout.write(f"Language: {args.language}, Model: {args.model}\n")
-        sys.stdout.write(f"Avg Sentence Length: {np.mean(sent_lens)}\n")
-        sys.stdout.write(f"Avg Dependency Length: {np.mean(dep_lens)}\n")
+        with open(args.output, "w") as file:
+            file.write(f"Language: {args.language}, Model: {args.model}\n")
+            file.write(f"Avg Sentence Length: {np.mean(sent_lens)}\n")
+            file.write(f"Avg Dependency Length: {np.mean(dep_lens)}\n")
         quit()
 
     # DEFAULT BEHAVIOR
     # iterate over all sentences in corpus
-    for i, (sentence, newdoc) in enumerate(corpusIterator):
-        ordered = list(
-            orderSentence(sentence, args.model, dhWeights, distanceWeights, freqs)
-        )
-        output = " ".join(list(map(lambda x: x["word"], ordered)))
+    with open(args.output, "w") as file:
+        for i, (sentence, newdoc) in enumerate(corpusIterator):
+            ordered = list(
+                orderSentence(sentence, args.model, dhWeights, distanceWeights)
+            )
+            # don't connect by space in Chinese, Japanese and Korean
+            if lang_code not in NON_SPACE_LANG:
+                output = " ".join(list(map(lambda x: x["word"], ordered)))
+            else:
+                output = "".join(list(map(lambda x: x["word"], ordered)))
 
-        # Add a new line if the just-processed sentence starts a new document
-        if newdoc and i != 0:
-            sys.stdout.write("\n")
-        sys.stdout.write(output)
-        sys.stdout.write(" . ")  # add a period after every sentence
+            # Add a new line if the just-processed sentence starts a new document
+            # TODO: how about new paragraph?
+            if newdoc and i != 0:
+                file.write("\n")
+            file.write(output)
+            file.write(" . ")  # add a period after every sentence
