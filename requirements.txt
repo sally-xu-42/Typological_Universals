@@ -15,12 +15,9 @@ contourpy==1.0.7
 cycler==0.11.0
 cymem==2.0.7
 datasets==2.12.0
-de-core-news-sm @ https://github.com/explosion/spacy-models/releases/download/de_core_news_sm-3.5.0/de_core_news_sm-3.5.0-py3-none-any.whl#sha256=c9c06808be2f1e7f448b37f94391a50dab2e2f72f9b5c2e979be18aebac4a06c
 dill==0.3.6
 docker-pycreds==0.4.0
-en-core-web-sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.5.0/en_core_web_sm-3.5.0-py3-none-any.whl#sha256=0964370218b7e1672a30ac50d72cdc6b16f7c867496f1d60925691188f4d2510
 evaluate==0.4.0
-fi-core-news-sm @ https://github.com/explosion/spacy-models/releases/download/fi_core_news_sm-3.5.0/fi_core_news_sm-3.5.0-py3-none-any.whl#sha256=115d35f09eb1ad37860289ef722884bb75534b54be74f710120a9345b46ca843
 filelock==3.12.0
 fonttools==4.39.3
 frozenlist==1.3.3

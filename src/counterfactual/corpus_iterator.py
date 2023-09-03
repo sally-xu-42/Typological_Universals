@@ -1,4 +1,4 @@
-# Iterating over a CoNNL-U dataset
+# Iterating over a CoNLL-U dataset
 # Original Author: Michael Hahn
 # Adapted by: Tianyang Xu
 
@@ -15,29 +15,8 @@ HEADER = [
     "head",
     "dep",
     "_",
-    "_",
+    "range",
 ]
-
-
-def read_conllu_file(path):
-    """Reads all data from a CoNNL-U format file and returns a list of 
-    strings, each corresponding to a sentence in the dataset. Assumes 
-    properly formed CoNNL-U format data.
-    NOTE: this function is deprecated and we instead use an iterator
-    over the data file to save memory.
-    TODO: can I delete this?
-
-    Args:
-        path (str): path to file
-
-    Returns:
-        List[str]: list of strings, where each string is a CoNNL-U record
-        for a sentence (one line per word, tab-separated fields)
-    """
-    with open(path) as f:
-        data = f.read().strip()
-    data = data.split("\n\n")
-    return data
 
 
 class CorpusIterator:
