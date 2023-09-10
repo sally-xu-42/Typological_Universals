@@ -89,53 +89,6 @@ def orderChildrenRelative(sentence, remainingChildren, reverseSoftmax, distanceW
     childrenLinearized = list(map(lambda x: x[0], logits))
     return childrenLinearized
 
-def swap(node):
-    """
-    Recursive function that takes care of all the pairs to swap in the node's childrens.
-    The node is a dictionary of the word.
-    """
-    vlist, objlist = [], []
-    children_list = node.get_all_children()
-    for c in children_list:
-        c = swap(c)
-    # Find all verb/object pairs in children
-    for c in children_list:
-        if c["coarse_dep"] == "verb":
-            children_list.append(c)
-    if children_list:
-        object = find_object()
-
-def swap_order(sentence, model):
-    """ 
-    This function gathers all constituents of pair heads and then switch order.
-    interviewed the student from ETH >>>
-    the student from ETH interviewed
-    """
-    x, y = model[0], model[1]
-    # rev = False # only reverse it once
-    # moved = [None] * len(sentence)
-
-    for line in sentence:
-        key = line["coarse_dep"]
-        if key == x:
-            x_idx = line["index"] - 1
-        elif key == y:
-            y_idx = line["index"] - 1
-        else:
-            continue
-    
-    if x_idx and y_idx:
-        sentence[x_idx], sentence[y_idx] = sentence[y_idx], sentence[x_idx]
-
-        for line in sentence:
-            if line["head"] == x_idx + 1:
-                line["reordered_head"] = y_idx + 1
-            elif line["head"] == y_idx + 1:
-                line["reordered_head"] = x_idx + 1
-            else:
-                continue
-    return sentence
-
 
 def orderSentence(sentence, model, dhWeights, distanceWeights, debug=False):
     """Linearize a sentence under a given grammar, parametrized by the given
@@ -378,7 +331,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--language", help="name of language, e.g. English", default="English"
+        "--language", help="name or code of language, e.g. English", default="English"
     )
     parser.add_argument(
         "--model",

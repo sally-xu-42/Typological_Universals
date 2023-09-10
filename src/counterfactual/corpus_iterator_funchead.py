@@ -9,7 +9,7 @@ import sys
 import json
 
 
-def reverse_content_head(sentence, validate=True):
+def reverse_content_head(sentence, validate=True, CH_CONVERSION_ORDER=["cc","case","cop","mark"], SPECIAL_CC=False):
     """Apply dependency parse convention change (deviation from vanilla UD)
 
     Args:
@@ -19,7 +19,24 @@ def reverse_content_head(sentence, validate=True):
     Returns:
         List[Dict[str,int]]: same format as input
     """
-    CH_CONVERSION_ORDER = ["cc", "case", "cop", "mark"]
+    if SPECIAL_CC: # SPECIAL_CC take care of the reverse VO case when we need to differentiate cc connecting verbs or non-verbs
+        for i in range(len(sentence)):
+            if sentence[i]["dep"] == "cc" or sentence[i]["dep"].startswith("cc:"):
+                # lift if head is verb
+                head = sentence[i]["head"] - 1
+                if sentence[head]["posUni"] == "VERB":
+                    grandp = sentence[head]["head"] - 1
+                    assert head > -1
+                    sentence[i]["head"] = grandp + 1
+                    sentence[head]["head"] = i + 1
+
+                    sentence[i]["dep"] = sentence[head]["dep"]
+                    sentence[head]["dep"] = "lifted_cc"
+                    assert sentence[i]["index"] == i + 1
+                    # print("cc position is {} and text is {}".format(i+1, sentence[i]["text"]))
+                    # print("now the parent is {} and grandp is {}".format(sentence[i]["head"], sentence[head]["head"]))
+                else:
+                    continue
     # find paths that should be reverted
     for dep in CH_CONVERSION_ORDER:
         for i in range(len(sentence)):
@@ -50,21 +67,26 @@ def reverse_content_head(sentence, validate=True):
 
 class CorpusIteratorFuncHead:
     def __init__(
-        self, filename, language, partition="train", storeMorph=False, validate=True
+        self, filename, language, partition="train", storeMorph=False, validate=True, 
+        CH_CONVERSION_ORDER=["cc","case","cop","mark"], SPECIAL_CC=False
     ):
         self.basis = CorpusIterator(
             filename, language, partition=partition, storeMorph=storeMorph,
         )
         self.validate = validate
+        self.CH_CONVERSION_ORDER = CH_CONVERSION_ORDER
+        self.SPECIAL_CC = SPECIAL_CC
 
     def iterator(self, rejectShortSentences=False):
         iterator = self.basis.iterator(rejectShortSentences=rejectShortSentences)
         for sentence, newdoc in iterator:
-            r = reverse_content_head(sentence, validate=self.validate)
+            r = reverse_content_head(sentence, validate=self.validate, 
+                                     CH_CONVERSION_ORDER=self.CH_CONVERSION_ORDER,
+                                     SPECIAL_CC=self.SPECIAL_CC)
             if r is None:
                 continue
             yield sentence, newdoc
 
     def getSentence(self, index):
         sentence, newdoc = self.basis.getSentence(index)
-        return reverse_content_head(sentence, validate=self.validate), newdoc
+        return reverse_content_head(sentence, validate=self.validate, CH_CONVERSION_ORDER=self.CH_CONVERSION_ORDER, SPECIAL_CC=self.SPECIAL_CC), newdoc
