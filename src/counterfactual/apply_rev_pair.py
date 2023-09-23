@@ -15,7 +15,7 @@ def makeCoarse(x):
     return x
 
 
-def get_all_children(sentence):
+def get_all_children(sentence, SPECIAL_EXPL=True, SPECIAL_ADVCL=True):
     """ Coarsify all the dependent relations, remove all puncts, track all children """
     for line in sentence:
         # make the dependency relation label coarse (ignore stuff after colon)
@@ -31,7 +31,25 @@ def get_all_children(sentence):
 
         headIndex = line["head"] - 1
         if line["coarse_dep"] == "nsubj":
-            sentence[headIndex]["nsubj"] = line["index"]
+            if SPECIAL_EXPL and \
+                sentence[headIndex].get("expl", float("inf")) < line["index"]:
+                    # change the other nsubj into obj
+                    line["coarse_dep"] = "obj"
+            else:
+                sentence[headIndex]["nsubj"] = line["index"]
+        
+        if SPECIAL_EXPL and \
+            line["coarse_dep"] == "expl" and \
+            sentence[headIndex]["posUni"] == "VERB" and \
+            line["index"] < line["head"]: # There is...
+                sentence[headIndex]["expl"] = line["index"]
+                sentence[headIndex]["nsubj"] = line["index"]
+
+        if SPECIAL_ADVCL and \
+            line["coarse_dep"] == "advcl" and \
+            (line.get("nsubj", None) is None): # I slept while eating
+                line["coarse_dep"] = "obj"
+
         sentence[headIndex]["children"] = sentence[headIndex].get("children", []) + [line["index"]]
     return root, sentence
 
@@ -106,15 +124,15 @@ def vo2ov_swap(sentence, root, verbose=False):
             visited.add(node)
             if verbose:
                 print(node) # print out index of the node being processed
-
             if not sentence[node-1].get("children", None):
                 continue
             for c in sentence[node-1]["children"]:
                 if sentence[node-1]['posUni'] in VERB_POS and sentence[c-1]['coarse_dep'] in OBJ_ARCS:
                     verb_idx, obj_idx = node - 1, c - 1
                     subj = sentence[node-1].get('nsubj', 0)
-                    if obj_idx > subj - 1 and obj_idx > verb_idx: # AVOID SPECIAL POSITION
-                      result = swap_order(verb_idx, obj_idx, subj, sentence, result, verbose)
+                    subj_idx = subj - 1
+                    if obj_idx > subj_idx and obj_idx > verb_idx and verb_idx > subj_idx: # AVOID SPECIAL POSITION
+                        result = swap_order(verb_idx, obj_idx, subj, sentence, result, verbose)
                     #   print(result)
                 if c not in visited:
                     stack.append(c)

@@ -9,7 +9,7 @@ Help()
    # Display Help
    echo "Script to parse data into CoNLL-U format."
    echo
-   echo "Syntax: parse.sh [-l|u|d|p|c|T]"
+   echo "Syntax: parse.sh [-l|d|p|c|T]"
    echo "options:"
    echo "l     language code to parse, e.g. 'en,ja,zh-cn'. Default: en"
    echo "d     Path to data directory with plain txt files. Default: ./data/wiki40b-txt"
@@ -20,7 +20,7 @@ Help()
    echo
 }
 
-while getopts "l:u:d:p:c:Th" option; do
+while getopts "l:d:p:c:Th" option; do
   case $option in
     l)
       language="$OPTARG"
