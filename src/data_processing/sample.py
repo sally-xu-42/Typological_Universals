@@ -21,7 +21,7 @@ def sample(lang, parse_dir, output_dir):
             if line.strip() == "":
                 sent_counter += 1
     num_sentences = sent_counter - 1
-    sys.stderr.write("INFO: There are {} sentences in this CoNLL-U file\n".format(num_sentences))
+    sys.stderr.write(f"INFO: There are {num_sentences} sentences in this CoNLL-U file\n")
 
     # Randomly select 100 numbers from the range 1 to num_sentences
     random_idx_list = sorted(random.sample(range(num_sentences), SAMPLE_NUM))
