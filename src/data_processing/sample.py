@@ -4,7 +4,7 @@ import re
 import os
 import sys
 
-SAMPLE_NUM = 35
+SAMPLE_NUM = 100
 
 def sample(lang, parse_dir, output_dir):
 
