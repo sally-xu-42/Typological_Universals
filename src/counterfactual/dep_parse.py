@@ -12,6 +12,21 @@ MODELS_DICT = {
     'tr': 'tr'
 }
 
+
+def sanity_check():
+
+    # Define the required version
+    required_version = "1.5.1"
+    # Get the actual Stanza version
+    actual_version = stanza.__version__
+
+    if actual_version != required_version:
+        print(f"Error: Stanza version {actual_version} is installed, but version {required_version} is required.")
+        raise Exception("Stanza version is not compatible.")
+    else:
+        print(f"Stanza version {actual_version} is compatible. Proceed with parsing.")
+
+
 def parse(lang, data_dir, parse_dir, partitions, test_run=False):
 
     if not os.path.exists(parse_dir):
@@ -21,7 +36,8 @@ def parse(lang, data_dir, parse_dir, partitions, test_run=False):
     nlp = stanza.Pipeline(MODELS_DICT[lang],
                           processors='tokenize,lemma,pos,depparse',
                           verbose=False,
-                          use_gpu=True)
+                          use_gpu=True,
+                          download_method=None)
     print(f'Loaded Stanza {MODELS_DICT[lang]} model...')
     
     for partition in partitions.split(","):
@@ -77,5 +93,6 @@ if __name__ == "__main__":
     parser.add_argument("--test_run", action="store_true")
     args = parser.parse_args()
     
+    sanity_check()
     print(f'\nParsing the data to CoNLL format from {args.data_dir}/{args.lang}')
     parse(args.lang, args.data_dir, args.parse_dir, args.partitions, args.test_run)

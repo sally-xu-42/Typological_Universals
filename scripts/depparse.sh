@@ -1,4 +1,6 @@
 #!/bin/bash
+# Set STANZA_RESOURCES_DIR
+export STANZA_RESOURCES_DIR="$SLURM_SUBMIT_DIR"
 
 language="en"
 do_test=False

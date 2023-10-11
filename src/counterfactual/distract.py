@@ -1,12 +1,14 @@
 import argparse
 import string
+import random
 from corpus_iterator_funchead import CorpusIteratorFuncHead
 from iso_639 import lang_codes
 
 NON_SPACE_LANG = ["ja", "ko", "zh-cn"]
 REV_PAIR_ORDERS = ["VO", "ADP_NP"]
-OBJ_ARCS = ["ccomp", "lifted_cop", "expl", "iobj", "obj", "obl", "xcomp"]
+OBJ_ARCS = ["obj"]
 VERB_POS = ["VERB", "AUX"]
+SEED_LIST = [0.1, 0.3, 0.5, 0.7, 0.9]
 
 
 def makeCoarse(x):
@@ -69,7 +71,7 @@ def get_all_descendant(id, sentence):
     return set([id] + res)
 
 
-def swap_order(verb_idx, obj_idx, subj, sentence, result, verbose=False, printPair=False):
+def distract_shuffle(verb_idx, obj_idx, subj, sentence, result, threshold, verbose=False):
     """ Helper function for swapping """
     # result = [1,3,2,4,5], set(2,3), (4,5) => [1,4,5,3,2]
     res = []
@@ -77,34 +79,33 @@ def swap_order(verb_idx, obj_idx, subj, sentence, result, verbose=False, printPa
     obj_chunk = get_all_descendant(obj_idx + 1, sentence)
     subj_chunk = get_all_descendant(subj, sentence) # for human names like Arthur Ford
     verb_chunk = set([x for x in (verb_chunk - obj_chunk) if x > max(subj_chunk)])
-
-    if verbose:
-        print("Verb idx now is {}".format(verb_idx))
-        print("Object idx now is {}".format(obj_idx))
-        print("Verb chunk moving now is {}".format(verb_chunk))
-        print("Object chunk moving now is {}".format(obj_chunk))
     
-    if printPair:
-        v_words = [sentence[i-1]["text"] for i in verb_chunk]
-        obj_words = [sentence[i-1]["text"] for i in obj_chunk]
-        print("<{}, {}>".format(v_words, obj_words))
+    seed = random.random()
     
-    if len(verb_chunk) == 0: return result # There is a boy on the farm
-    
-    VERB_POS = [result.index(i) for i in verb_chunk]
-    OBJ_POS = [result.index(i) for i in obj_chunk]
-    MAX_POS = max(max(VERB_POS), max(OBJ_POS))
-    # print(MAX_POS)
+    if seed >= threshold:
 
-    for pos, idx in enumerate(result):
-      if idx in verb_chunk or pos > MAX_POS: continue
-      res.append(idx)
-    # print(res)
-    res.extend([idx for idx in result if idx in verb_chunk])
-    # print(res)
-    res.extend([idx for pos,idx in enumerate(result) if pos > MAX_POS])
+        if verbose:
+            v_words = " ".join([sentence[i-1]["text"] for i in verb_chunk if i <= (verb_idx + 1)])
+            obj_words = " ".join([sentence[i-1]["text"] for i in obj_chunk])
+            print("<{}, {}>".format(v_words, obj_words))
 
-    return res
+        if len(verb_chunk) == 0: return result # There is a boy on the farm
+        
+        VERB_POS = [result.index(i) for i in verb_chunk]
+        OBJ_POS = [result.index(i) for i in obj_chunk]
+        MAX_POS = max(max(VERB_POS), max(OBJ_POS))
+        # print(MAX_POS)
+
+        for pos, idx in enumerate(result):
+            if idx in verb_chunk or pos > MAX_POS: continue
+            res.append(idx)
+        # print(res)
+        res.extend([idx for idx in result if idx in verb_chunk])
+        # print(res)
+        res.extend([idx for pos,idx in enumerate(result) if pos > MAX_POS])
+        return res
+    else:
+        return result
 
 
 def idx_to_sent(idx, sentence, space=True):
@@ -117,11 +118,12 @@ def idx_to_sent(idx, sentence, space=True):
     return output
             
 
-def vo2ov_swap(sentence, root, verbose=False, printPair=False):
+def vo2ov_distract(sentence, root, verbose=False):
     """ DFS function for swapping """
     result = [i for i in range(1, len(sentence) + 1)]
     stack = [root]
     visited = set()
+    threshold = random.choice(SEED_LIST)
 
     while stack:
         node = stack.pop()
@@ -137,7 +139,7 @@ def vo2ov_swap(sentence, root, verbose=False, printPair=False):
                     subj = sentence[node-1].get('nsubj', 0)
                     subj_idx = subj - 1
                     if obj_idx > subj_idx and obj_idx > verb_idx and verb_idx > subj_idx: # AVOID SPECIAL POSITION
-                        result = swap_order(verb_idx, obj_idx, subj, sentence, result, verbose, printPair)
+                        result = distract_shuffle(verb_idx, obj_idx, subj, sentence, result, threshold, verbose)
                     #   print(result)
                 if c not in visited:
                     stack.append(c)
@@ -158,12 +160,12 @@ if __name__ == "__main__":
     parser.add_argument(
         "--filename",
         help="filename of CONLLU data",
-        default="./parse/en_tiny_Stanza.conllu",
+        default="./data/wiki40b-random/en_distract.conllu",
     )
     parser.add_argument(
         "--output",
         help="output file of plain reordered text that has a specific <X,Y> pair reordered",
-        default="./en_ov.txt"
+        default="./data/wiki40b-random/en_ov_distract.txt"
     )
     args = parser.parse_args()
 
@@ -183,9 +185,9 @@ if __name__ == "__main__":
     )
     corpusIterator = corpus.iterator()
 
-    # find corresponding function
-    SWAP_FUNCTIONS = {"VO": vo2ov_swap, "ADP_NP": None}
-    swap_pair = SWAP_FUNCTIONS[args.pair]
+    # find corresponding distractor function
+    DISTRACT_FUNCTIONS = {"VO": vo2ov_distract, "ADP_NP": None}
+    distract_pair = DISTRACT_FUNCTIONS[args.pair]
     # don't connect by space in Chinese, Japanese and Korean
     space = False if lang_code in NON_SPACE_LANG else True
 
@@ -193,11 +195,9 @@ if __name__ == "__main__":
     with open(args.output, "w") as file:
         for i, (sentence, newdoc) in enumerate(corpusIterator):
             root, sentence = get_all_children(sentence)
-            ordered = swap_pair(sentence, root, verbose=False, printPair=False)
+            ordered = distract_pair(sentence, root, verbose=False)
             output = idx_to_sent(ordered, sentence, space)
-            # Add a new line if the just-processed sentence starts a new document
-            # TODO: how about new paragraph?
-            if newdoc and i != 0:
+            if i != 0:
                 file.write("\n")
             file.write(output)
             file.write(". ")  # add a period after every sentence, removed the space before period
