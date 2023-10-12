@@ -13,9 +13,14 @@
 #! Work directory (i.e. where the job will run):
 workdir="/cluster/project/sachan/txu/evaluation-pipeline"
 
+#! Model directory (i.e. where the model checkpoints are saved):
+modeldir="/cluster/project/sachan/txu/Typological_Universal/checkpoints"
+
 module purge
 module load eth_proxy gcc/8.2.0 python_gpu/3.9.9
 source $workdir/venv/bin/activate
+
+export WANDB_PROJECT="babyLM"
 
 
 #! Run options for the application:
