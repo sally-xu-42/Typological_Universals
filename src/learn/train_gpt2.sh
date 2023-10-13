@@ -5,7 +5,9 @@ export NCCL_DEBUG=INFO
 EXTRA_FLAGS="$@"
 echo $EXTRA_FLAGS
 
-torchrun --nproc_per_node 8 ./src/learn/run_clm.py \
+RUN_APPLICATION="torchrun --nproc_per_node 8"
+
+${RUN_APPLICATION} ./src/learn/run_clm.py \
     --model_type gpt2 \
     --tokenizer_name "data/tokenizer/${DATASET}-${LANG}/gpt2_tokenizer" \
     --train_file "${DATA_DIR}/${LANG}_train.txt" \
