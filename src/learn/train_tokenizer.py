@@ -1,5 +1,6 @@
 import argparse
 import os
+import json
 
 from tokenizers import AddedToken
 from tokenizers.implementations import ByteLevelBPETokenizer
@@ -8,11 +9,7 @@ from transformers import AutoTokenizer
 sample = {
     "en": "Hello, y'all! How are you 😁? (just testing the tokenizer)",
     "ja": "おやすみなさい",
-    "it": "Stiamo cercando una gioielleria.",
-    "ja_en": "おやすみなさい"
-             "Hello, y'all! How are you 😁? (just testing the tokenizer)",
-    "it_en": "Stiamo cercando una gioielleria."
-             "Hello, y'all! How are you 😁? (just testing the tokenizer)",
+    "it": "Stiamo cercando una gioielleria."
 }
 
 
@@ -21,8 +18,8 @@ def train_tokenizer(model, dataset, lang):
     bpe_tokenizer = ByteLevelBPETokenizer()
 
     files = [f"./data/{dataset}-txt/{lang}_{split}.txt" for split in ["test", "train", "validation"]] # this is always run from root
-
-    bpe_tokenizer.train(files=files, vocab_size=32000, min_frequency=2)
+    
+    bpe_tokenizer.train(files=files, vocab_size=32000, min_frequency=2)  
 
     tokenizer_path = f'./data/tokenizer/{dataset}-{lang}/{model}_tokenizer'
     if not os.path.exists(tokenizer_path):
@@ -30,6 +27,22 @@ def train_tokenizer(model, dataset, lang):
 
     # save the vocab.json and merges.txt files of the trained bpe tokenizer
     bpe_tokenizer.save_model(tokenizer_path)
+    # fix the gpt2 tokenizer to load correctly with huggingface
+    if model == "gpt2":
+        f1 = open(f'./data/tokenizer/{dataset}-{lang}/{model}_tokenizer/added_tokens.json')
+        added_tokens = json.load(f1)
+        os.remove(f'./data/tokenizer/{dataset}-{lang}/{model}_tokenizer/added_tokens.json')
+        print('Removed added_tokens.json')
+
+        f2 = open(f'./data/tokenizer/{dataset}-{lang}/{model}_tokenizer/vocab.json', 'r')
+        vocab = json.load(f2)
+
+        for (key, value) in added_tokens.items():
+            vocab.update({key:value})
+            print(f'Added {key}:{value} to the vocabulary')
+
+        out = open(f'./data/tokenizer/{dataset}-{lang}/{model}_tokenizer/vocab.json', 'w')
+        json.dump(vocab, out)
 
     model_tokenizer = AutoTokenizer.from_pretrained(tokenizer_path, tokenizer_type=model)
     model_tokenizer.model_max_length = 512

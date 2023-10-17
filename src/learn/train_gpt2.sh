@@ -18,9 +18,9 @@ ${RUN_APPLICATION} ./src/learn/run_clm.py \
     --report_to wandb \
     --output_dir "./checkpoints/${MODEL_NAME}" \
     --overwrite_output_dir \
-    --per_device_train_batch_size 4 \
-    --per_device_eval_batch_size 4 \
-    --gradient_accumulation_steps 128 \
+    --per_device_train_batch_size 8 \
+    --per_device_eval_batch_size 8 \
+    --gradient_accumulation_steps 16 \
     --eval_accumulation_steps 128 \
     --block_size 512 \
     --do_train \
@@ -28,9 +28,9 @@ ${RUN_APPLICATION} ./src/learn/run_clm.py \
     --do_eval \
     --evaluation_strategy "epoch" \
     --save_strategy "epoch" \
-    --learning_rate 1e-4 \
-    --warmup_ratio 0.06 \
-    --num_train_epochs 12 \
+    --learning_rate 1e-3 \
+    --warmup_ratio 0.07 \
+    --num_train_epochs 50 \
     --low_cpu_mem_usage \
     --fp16 \
     --ddp_backend nccl \
