@@ -21,6 +21,16 @@ def makeCoarse(x):
         return x[: x.index(":")]
     return x
 
+def check_mark(child_id, parent_id, sentence):
+    # helper function for VO swapper to check if the child is a mark of the parent 
+    if sentence[parent_id-1]["posUni"] == "VERB" and \
+        sentence[child_id-1]["deprel"] == "mark" and \
+        sentence[parent_id-1].get("advcl", False) and \
+        sentence[child_id-1]["word"] != "to":
+        return True
+    else:
+        return False
+
 
 def get_all_children(sentence, SPECIAL_EXPL=True, SPECIAL_ADVCL=True):
     """ Coarsify all the dependent relations, remove all puncts, track all children """
@@ -56,12 +66,16 @@ def get_all_children(sentence, SPECIAL_EXPL=True, SPECIAL_ADVCL=True):
             line["coarse_dep"] == "advcl" and \
             (line.get("nsubj", None) is None): # I slept while eating
                 line["coarse_dep"] = "obj"
+                # serves to check for the special case, we add an indicator of whether it's changed from advcl
+                # this line contains a verb if parser is correct.
+                # we only check if advcl is True when swapping. if so we split the "mark" children with exception of "to"
+                if line["upos"] == "VERB": line["advcl"] = True
 
         sentence[headIndex]["children"] = sentence[headIndex].get("children", []) + [line["index"]]
     return root, sentence
 
 
-def get_all_descendant(id, sentence):
+def get_all_descendant(id, sentence, SPECIAL_MARK=False):
     """ DFS function for getting all descendants """
     stack = [id]
     res = []
@@ -71,8 +85,13 @@ def get_all_descendant(id, sentence):
       if (node == 0) or (not sentence[node-1].get("children", None)): # no subj associated case, node=0
           continue
       for c in sentence[node-1]['children']:
-          stack.append(c)
-          res.append(c)
+            if SPECIAL_MARK:
+                if check_mark(c, node, sentence):
+                    res.append(c)
+                    continue
+            else:        
+                stack.append(c)
+                res.append(c)
     return set([id] + res)
 
 
@@ -80,14 +99,14 @@ def swap_order_V_O(verb_idx, obj_idx, subj, sentence, result, printPair=False):
     """ Helper function for swapping """
     # result = [1,3,2,4,5], set(2,3), (4,5) => [1,4,5,3,2]
     res = []
-    verb_chunk = get_all_descendant(verb_idx + 1, sentence)
+    verb_chunk = get_all_descendant(verb_idx + 1, sentence, SPECIAL_MARK=True)
     obj_chunk = get_all_descendant(obj_idx + 1, sentence)
     subj_chunk = get_all_descendant(subj, sentence) # for human names like Arthur Ford
     verb_chunk = set([x for x in (verb_chunk - obj_chunk) if x > max(subj_chunk)])
     
     if printPair:
-        v_words = [sentence[i-1]["text"] for i in verb_chunk]
-        obj_words = [sentence[i-1]["text"] for i in obj_chunk]
+        v_words = [sentence[i-1]["word"] for i in verb_chunk]
+        obj_words = [sentence[i-1]["word"] for i in obj_chunk]
         print("<{}, {}>".format(v_words, obj_words))
     
     if len(verb_chunk) == 0: return result # There is a boy on the farm
@@ -118,8 +137,8 @@ def swap_order_ADP_NP(adp_idx, np_idx, sentence, result, printPair=False):
     MAX_POS = max(max(ADP_POS), max(NP_POS))
     
     if printPair:
-        adp_words = [sentence[i-1]["text"] for i in adp_chunk]
-        np_words = [sentence[i-1]["text"] for i in np_chunk]
+        adp_words = [sentence[i-1]["word"] for i in adp_chunk]
+        np_words = [sentence[i-1]["word"] for i in np_chunk]
         print("<{}, {}>".format(adp_words, np_words))
 
     for pos, idx in enumerate(result):
