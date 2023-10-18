@@ -4,9 +4,16 @@ from corpus_iterator_funchead import CorpusIteratorFuncHead
 from iso_639 import lang_codes
 
 NON_SPACE_LANG = ["ja", "ko", "zh-cn"]
+VO_LANG = ["en"]
+OV_LANG = ["ja", "zh-cn", "ko"]
 REV_PAIR_ORDERS = ["VO", "ADP_NP"]
+
 OBJ_ARCS = ["ccomp", "lifted_cop", "expl", "iobj", "obj", "obl", "xcomp"]
+ADP_NP_ARCS = ["case"]
+
 VERB_POS = ["VERB", "AUX"]
+ADP_POS = ["ADP"]
+NP_POS = ["NOUN", "PRON"]
 
 
 def makeCoarse(x):
@@ -97,11 +104,45 @@ def swap_order(verb_idx, obj_idx, subj, sentence, result, verbose=False, printPa
     # print(MAX_POS)
 
     for pos, idx in enumerate(result):
-      if idx in verb_chunk or pos > MAX_POS: continue
-      res.append(idx)
-    # print(res)
+        if idx in verb_chunk or pos > MAX_POS: continue
+        res.append(idx)
     res.extend([idx for idx in result if idx in verb_chunk])
-    # print(res)
+    res.extend([idx for pos,idx in enumerate(result) if pos > MAX_POS])
+
+    return res
+
+
+def swap_order_ADP_NP(verb_idx, obj_idx, subj, sentence, result, verbose=False, printPair=False):
+    """ Helper function for swapping """
+    # result = [1,3,2,4,5], set(2,3), (4,5) => [1,4,5,3,2]
+    res = []
+    verb_chunk = get_all_descendant(verb_idx + 1, sentence)
+    obj_chunk = get_all_descendant(obj_idx + 1, sentence)
+    subj_chunk = get_all_descendant(subj, sentence) # for human names like Arthur Ford
+    verb_chunk = set([x for x in (verb_chunk - obj_chunk) if x > max(subj_chunk)])
+
+    if verbose:
+        print("Verb idx now is {}".format(verb_idx))
+        print("Object idx now is {}".format(obj_idx))
+        print("Verb chunk moving now is {}".format(verb_chunk))
+        print("Object chunk moving now is {}".format(obj_chunk))
+    
+    if printPair:
+        v_words = [sentence[i-1]["text"] for i in verb_chunk]
+        obj_words = [sentence[i-1]["text"] for i in obj_chunk]
+        print("<{}, {}>".format(v_words, obj_words))
+    
+    if len(verb_chunk) == 0: return result # There is a boy on the farm
+    
+    VERB_POS = [result.index(i) for i in verb_chunk]
+    OBJ_POS = [result.index(i) for i in obj_chunk]
+    MAX_POS = max(max(VERB_POS), max(OBJ_POS))
+    # print(MAX_POS)
+
+    for pos, idx in enumerate(result):
+        if idx in verb_chunk or pos > MAX_POS: continue
+        res.append(idx)
+    res.extend([idx for idx in result if idx in verb_chunk])
     res.extend([idx for pos,idx in enumerate(result) if pos > MAX_POS])
 
     return res
@@ -116,6 +157,33 @@ def idx_to_sent(idx, sentence, space=True):
         output = "".join([word_list[i-1] for i in idx if not (word_list[i-1] in string.punctuation)])
     return output
             
+
+def adp_np_swap(sentence, root, verbose=False, printPair=False):
+    """ DFS function for swapping adposition and noun phrase """
+    result = [i for i in range(1, len(sentence) + 1)]
+    stack = [root]
+    visited = set()
+
+    while stack:
+        node = stack.pop()
+        if node not in visited:
+            visited.add(node)
+            if verbose:
+                print(node) # print out index of the node being processed
+            if not sentence[node-1].get("children", None):
+                continue
+            for c in sentence[node-1]["children"]:
+                if sentence[node-1]['posUni'] in NP_POS and \
+                    sentence[c-1]['coarse_dep'] in ADP_NP_ARCS and \
+                    sentence[c-1]['posUni'] in ADP_POS:
+                        np_idx, adp_idx = node - 1, c - 1
+                        if adp_idx < np_idx: # preposition
+                            result = swap_order_ADP_NP(adp_idx, np_idx, sentence, result, verbose)
+                if c not in visited:
+                    stack.append(c)
+
+    return result
+
 
 def vo2ov_swap(sentence, root, verbose=False, printPair=False):
     """ DFS function for swapping """
@@ -143,6 +211,9 @@ def vo2ov_swap(sentence, root, verbose=False, printPair=False):
                     stack.append(c)
 
     return result
+
+
+SWAP_FUNCTIONS = {"VO": vo2ov_swap, "ADP_NP": adp_np_swap}
 
 
 if __name__ == "__main__":
@@ -184,10 +255,11 @@ if __name__ == "__main__":
     corpusIterator = corpus.iterator()
 
     # find corresponding function
-    SWAP_FUNCTIONS = {"VO": vo2ov_swap, "ADP_NP": None}
     swap_pair = SWAP_FUNCTIONS[args.pair]
     # don't connect by space in Chinese, Japanese and Korean
     space = False if lang_code in NON_SPACE_LANG else True
+    # 1 for VO, 2 for OV
+    order = 1 if lang_code in VO_LANG else 2
 
     # iterate over all sentences in a corpus
     with open(args.output, "w") as file:
