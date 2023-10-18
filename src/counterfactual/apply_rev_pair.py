@@ -10,6 +10,7 @@ REV_PAIR_ORDERS = ["VO", "ADP_NP"]
 
 OBJ_ARCS = ["ccomp", "lifted_cop", "expl", "iobj", "obj", "obl", "xcomp"]
 ADP_NP_ARCS = ["case"]
+COP_ARCS = ["lifted_cop"] # cop has been lifted in our design
 
 VERB_POS = ["VERB", "AUX"]
 ADP_POS = ["ADP"]
