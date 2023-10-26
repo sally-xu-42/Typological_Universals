@@ -27,6 +27,17 @@ def train_tokenizer(model, dataset, lang):
 
     # save the vocab.json and merges.txt files of the trained bpe tokenizer
     bpe_tokenizer.save_model(tokenizer_path)
+
+    model_tokenizer = AutoTokenizer.from_pretrained(tokenizer_path, tokenizer_type=model)
+    model_tokenizer.model_max_length = 512
+    model_tokenizer.add_special_tokens({"pad_token": AddedToken("<pad>", normalized=True)})
+
+    print(f'Tokenizer vocab size: {len(model_tokenizer)}')
+    print(f'Tokenizer max sequence length: {model_tokenizer.model_max_length} \n')
+
+    # save the full model tokenizer configuration files
+    model_tokenizer.save_pretrained(tokenizer_path)
+
     # fix the gpt2 tokenizer to load correctly with huggingface
     if model == "gpt2":
         f1 = open(f'./data/tokenizer/{dataset}-{lang}/{model}_tokenizer/added_tokens.json')
@@ -43,16 +54,6 @@ def train_tokenizer(model, dataset, lang):
 
         out = open(f'./data/tokenizer/{dataset}-{lang}/{model}_tokenizer/vocab.json', 'w')
         json.dump(vocab, out)
-
-    model_tokenizer = AutoTokenizer.from_pretrained(tokenizer_path, tokenizer_type=model)
-    model_tokenizer.model_max_length = 512
-    model_tokenizer.add_special_tokens({"pad_token": AddedToken("<pad>", normalized=True)})
-
-    print(f'Tokenizer vocab size: {len(model_tokenizer)}')
-    print(f'Tokenizer max sequence length: {model_tokenizer.model_max_length} \n')
-
-    # save the full model tokenizer configuration files
-    model_tokenizer.save_pretrained(tokenizer_path)
 
     output = model_tokenizer.encode_plus(sample[lang])
     print(output.tokens(), '\n')
