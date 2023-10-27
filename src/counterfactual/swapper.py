@@ -1,7 +1,3 @@
-import stanza
-import copy
-import sys
-import json
 import string
 # import colorama
 
@@ -25,13 +21,19 @@ class Swapper():
 
     COMP_S_ARCS = ["mark"]
 
-    def __init__(self, nlp, pair, order=0, arc_direction="lr"):
+    def __init__(self, pair, order=1, space=True):
 
-        self.nlp = nlp
         self.pair = pair
         self.order = order
-        self.arc_direction = arc_direction
-        self.swap_functions = {"VO": self.v_o_swap, "ADP_NP": self.adp_np_swap}
+        self.space = space
+        self.swap_functions = {"VO": self.v_o_swap, 
+                               "ADP_NP": self.adp_np_swap,
+                               "COP_PRED": None,
+                               "AUX_V": None,
+                               "NOUN_G": None,
+                               "COMP_S": None
+                               }
+        self.swap_pair = self.swap_functions[pair]
 
         self.SPECIAL_MARK = True if pair == "vo" else False # leave special case for mark in VO swapping
         self.SPECIAL_EXPL = True if pair == "vo" else False # leave special case for "there is" in VO swapping
@@ -42,9 +44,13 @@ class Swapper():
             return x[: x.index(":")]
         return x
     
-    def idx_to_sent(self, idx, sentence):
+    def idx_to_sent(self, idx, sentence, space=True):
+        # iterate over all sentences in corpus and write its reversed version
         word_list = [x["word"] for x in sentence]
-        output = " ".join([word_list[i-1] for i in idx if not (word_list[i-1] in string.punctuation)])
+        if space:
+            output = " ".join([word_list[i-1] for i in idx if not (word_list[i-1] in string.punctuation)])
+        else:
+            output = "".join([word_list[i-1] for i in idx if not (word_list[i-1] in string.punctuation)])
         return output
     
     def check_mark(self, child_id, parent_id, sentence):
@@ -221,5 +227,11 @@ class Swapper():
                         stack.append(c)
 
         return result
+    
+    def pipeline(self, sentence):
+        root, sentence = self.get_all_children(sentence)
+        ordered = self.swap_pair(sentence, root, printPair=False)
+        output = self.idx_to_sent(ordered, sentence, self.space)
+        return output
     
 

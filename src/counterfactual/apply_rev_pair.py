@@ -1,12 +1,12 @@
 import argparse
 import string
 from corpus_iterator_funchead import CorpusIteratorFuncHead
-from iso_639 import lang_codes
+from swapper import Swapper
 
 NON_SPACE_LANG = ["ja", "ko", "zh-cn"]
 VO_LANG = ["en"]
 OV_LANG = ["ja", "zh-cn", "ko"]
-REV_PAIR_ORDERS = ["VO", "ADP_NP"]
+REV_PAIR_ORDERS = ["VO", "ADP_NP", "COP_PRED", "AUX_V", "NOUN_G", "COMP_S"]
 
 OBJ_ARCS = ["ccomp", "lifted_cop", "expl", "iobj", "obj", "obl", "xcomp"]
 ADP_NP_ARCS = ["case"]
@@ -241,16 +241,14 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # check language
-    if not (args.language in lang_codes.keys() or args.language in lang_codes.values()):
+    if args.language not in ["en", "ja"]:
         raise ValueError(f"Specified language is invalid: {args.language}")
-    lang_codes_inv = {v: k for k, v in lang_codes.items()}
-    lang_code = lang_codes_inv[args.language] if args.language in lang_codes.values() else args.language
-
-    # check the pair to reverse
+    
+    # check the pair
     if not args.pair in REV_PAIR_ORDERS: 
         raise ValueError(f"Specified pair is invalid: {args.pair}")
 
-    # load and iterate over a corpus, VO to OV
+    # load and iterate over a corpus
     corpus = CorpusIteratorFuncHead(
         args.filename, args.language, "train", validate=False, CH_CONVERSION_ORDER=["cop"], SPECIAL_CC=True
     )
@@ -259,9 +257,9 @@ if __name__ == "__main__":
     # find corresponding function
     swap_pair = SWAP_FUNCTIONS[args.pair]
     # don't connect by space in Chinese, Japanese and Korean
-    space = False if lang_code in NON_SPACE_LANG else True
+    space = False if args.language in NON_SPACE_LANG else True
     # 1 for VO, 2 for OV
-    order = 1 if lang_code in VO_LANG else 2
+    order = 1 if args.language in VO_LANG else 2
 
     # iterate over all sentences in a corpus
     with open(args.output, "w") as file:
