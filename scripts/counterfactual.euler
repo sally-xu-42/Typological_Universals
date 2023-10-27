@@ -1,0 +1,41 @@
+#!/bin/bash
+
+#SBATCH -n 1
+#SBATCH --cpus-per-task=40
+#SBATCH --mem-per-cpu=4096
+#SBATCH --time=120:00:00
+#SBATCH --job-name="counterfactual"
+#SBATCH --open-mode=truncate
+#SBATCH --mail-type=END,FAIL
+
+#! Work directory (i.e. where the job will run):
+workdir="$SLURM_SUBMIT_DIR"  # The value of SLURM_SUBMIT_DIR sets workdir to the directory
+                             # in which sbatch is run.
+
+module purge
+module load eth_proxy gcc/8.2.0 python_gpu/3.9.9
+source $workdir/env2/bin/activate
+
+
+#! Run options for the application:
+prefix="python3"
+application="src/counterfactual/rev.py"
+options=" --language ${LANGUAGE} \
+        --pair ${SWAP_PAIR} \
+        --filename ${CONLLU_FILE} \
+        --output ${OUTPUT_FILE}"
+
+
+cd $workdir
+echo -e "Changed directory to `pwd`.\n"
+
+
+echo -e "JobID: $SLURM_JOB_ID\n======"
+echo "Time: `date`"
+echo "Running on master node: `hostname`"
+echo "Current directory: `pwd`"
+
+#TODO: modify passing options here
+CMD="$prefix $workdir/$application $options"
+echo -e "\nExecuting command:\n==================\n$CMD\n"
+eval $CMD
