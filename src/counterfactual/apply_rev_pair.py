@@ -1,7 +1,6 @@
 import argparse
 import string
 from corpus_iterator_funchead import CorpusIteratorFuncHead
-from swapper import Swapper
 
 NON_SPACE_LANG = ["ja", "ko", "zh-cn"]
 VO_LANG = ["en"]
