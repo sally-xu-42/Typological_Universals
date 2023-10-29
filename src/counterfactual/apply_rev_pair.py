@@ -28,7 +28,7 @@ def makeCoarse(x):
 def check_mark(child_id, parent_id, sentence):
     # helper function for VO swapper to check if the child is a mark of the parent 
     if sentence[parent_id-1]["posUni"] == "VERB" and \
-        sentence[child_id-1]["deprel"] == "mark" and \
+        sentence[child_id-1]["coarse_dep"] == "mark" and \
         sentence[parent_id-1].get("advcl", False) and \
         sentence[child_id-1]["word"] != "to":
         return True
@@ -73,7 +73,7 @@ def get_all_children(sentence, SPECIAL_EXPL=True, SPECIAL_ADVCL=True):
                 # serves to check for the special case, we add an indicator of whether it's changed from advcl
                 # this line contains a verb if parser is correct.
                 # we only check if advcl is True when swapping. if so we split the "mark" children with exception of "to"
-                if line["upos"] == "VERB": line["advcl"] = True
+                if line["posUni"] == "VERB": line["advcl"] = True
 
         sentence[headIndex]["children"] = sentence[headIndex].get("children", []) + [line["index"]]
     return root, sentence

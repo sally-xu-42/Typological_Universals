@@ -35,9 +35,9 @@ class Swapper():
                                }
         self.swap_pair = self.swap_functions[pair]
 
-        self.SPECIAL_MARK = True if pair == "vo" else False # leave special case for mark in VO swapping
-        self.SPECIAL_EXPL = True if pair == "vo" else False # leave special case for "there is" in VO swapping
-        self.SPECIAL_ADVCL = True if pair == "vo" else False # leave special case for "there is" in VO swapping
+        self.SPECIAL_MARK = True if pair == "VO" else False # leave special case for mark in VO swapping
+        self.SPECIAL_EXPL = True if pair == "VO" else False # leave special case for "there is" in VO swapping
+        self.SPECIAL_ADVCL = True if pair == "VO" else False # leave special case for "there is" in VO swapping
 
     def makeCoarse(self, x):
         if ":" in x:
@@ -56,7 +56,7 @@ class Swapper():
     def check_mark(self, child_id, parent_id, sentence):
         """ helper function for VO swapper to check if the child is a mark of the parent """
         if sentence[parent_id-1]["posUni"] == "VERB" and \
-            sentence[child_id-1]["deprel"] == "mark" and \
+            sentence[child_id-1]["coarse_dep"] == "mark" and \
             sentence[parent_id-1].get("advcl", False) and \
             sentence[child_id-1]["word"] != "to":
             return True
@@ -121,7 +121,7 @@ class Swapper():
                     # serves to check for the special case, we add an indicator of whether it's changed from advcl
                     # this line contains a verb if parser is correct.
                     # we only check if advcl is True when swapping. if so we split the "mark" children with exception of "to"
-                    if line["upos"] == "VERB": line["advcl"] = True
+                    if line["posUni"] == "VERB": line["advcl"] = True
 
             sentence[headIndex]["children"] = sentence[headIndex].get("children", []) + [line["index"]]
         return root, sentence
