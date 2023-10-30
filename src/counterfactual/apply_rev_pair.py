@@ -9,7 +9,7 @@ REV_PAIR_ORDERS = ["VO", "ADP_NP", "COP_PRED", "AUX_V", "NOUN_G", "COMP_S"]
 
 OBJ_ARCS = ["ccomp", "lifted_cop", "expl", "iobj", "obj", "obl", "xcomp"]
 ADP_NP_ARCS = ["case"]
-COP_ARCS = ["lifted_cop"] # cop has been lifted in our design
+COP_PRED_ARCS = ["lifted_cop"] # cop has been lifted in our design
 AUX_VERB_ARCS = ["aux"]
 NOUN_G_ARCS = ["nmod"]
 NOUN_RELCL_ARCS = ["acl"]
@@ -154,6 +154,31 @@ def swap_order_ADP_NP(adp_idx, np_idx, sentence, result, printPair=False):
     return res
 
 
+def swap_order_COP_PRED(cop_idx, pred_idx, sentence, result, printPair=False):
+    """ Helper function for swapping """
+    # result = [1,3,2,4,5], set(2,3), (4,5) => [1,4,5,3,2]
+    res = []
+    pred_chunk = get_all_descendant(pred_idx + 1, sentence)
+    pred_chunk = [x for x in pred_chunk if x > (cop_idx + 1)]
+
+    COP_POS = result.index(cop_idx + 1)
+    PRED_POS = [result.index(i) for i in pred_chunk]
+    MAX_POS = max(COP_POS, max(PRED_POS))
+    
+    if printPair:
+        cop_word = sentence[cop_idx]["word"]
+        pred_words = " ".join([sentence[i-1]["word"] for i in pred_chunk])
+        print("<{}, {}>".format(cop_word, pred_words))
+
+    for pos, idx in enumerate(result):
+        if pos == COP_POS or pos > MAX_POS: continue
+        res.append(idx)
+    res.extend([idx for pos,idx in enumerate(result) if pos > MAX_POS])
+    res.append(cop_idx + 1)
+
+    return res
+
+
 def idx_to_sent(idx, sentence, space=True):
     # iterate over all sentences in corpus and write its reversed version
     word_list = [x["word"] for x in sentence]
@@ -214,7 +239,30 @@ def v_o_swap(sentence, root, printPair=False):
     return result
 
 
-SWAP_FUNCTIONS = {"VO": v_o_swap, "ADP_NP": adp_np_swap}
+def cop_pred_swap(sentence, root, printPair=False):
+    """ DFS function for swapping copula and predicate """
+    result = [i for i in range(1, len(sentence) + 1)]
+    stack = [root]
+    visited = set()
+
+    while stack:
+        node = stack.pop()
+        if node not in visited:
+            visited.add(node)
+            if not sentence[node-1].get("children", None):
+                continue
+            for c in sentence[node-1]["children"]:
+                if sentence[c-1]['coarse_dep'] in COP_PRED_ARCS:
+                    cop_idx, pred_idx = node - 1, c - 1
+                    if cop_idx < pred_idx: # <cop, pred>
+                        result = swap_order_COP_PRED(cop_idx, pred_idx, sentence, result, printPair)
+                if c not in visited:
+                    stack.append(c)
+
+    return result
+
+
+SWAP_FUNCTIONS = {"VO": v_o_swap, "ADP_NP": adp_np_swap, "COP_PRED": cop_pred_swap}
 
 
 if __name__ == "__main__":
