@@ -1,11 +1,20 @@
 import argparse
 from corpus_iterator_funchead import CorpusIteratorFuncHead
-from swapper import Swapper
+from swapper import Swapper, VOSwapper
 
 VO_LANG = ["en"]
 OV_LANG = ["ja", "zh-cn", "ko"]
 NON_SPACE_LANG = ["ja", "ko", "zh-cn"]
 REV_PAIR_ORDERS = ["VO", "ADP_NP", "COP_PRED", "AUX_V", "NOUN_G", "COMP_S"]
+
+def create_swapper(pair, order, space):
+    """ factory function for instantiating the actual Swapper object """
+    if pair == "VO":
+        return VOSwapper(order, space)
+    elif pair == "ADP_NP":
+        return None
+    else:
+        return None
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -49,7 +58,7 @@ if __name__ == "__main__":
     order = 1 if args.language in VO_LANG else 2
 
     # load the swapper for a specific pair
-    swapper = Swapper(args.pair, order, space)
+    swapper = create_swapper(args.pair, order, space)
 
     # iterate over all sentences in a corpus
     with open(args.output, "w") as file:

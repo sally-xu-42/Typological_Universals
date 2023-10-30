@@ -228,10 +228,79 @@ class Swapper():
 
         return result
     
+    def swap_pair(self):
+        pass
+
+    def swap(self):
+        pass
+    
+    # def pipeline(self, sentence):
+    #     root, sentence = self.get_all_children(sentence)
+    #     ordered = self.swap_pair(sentence, root, printPair=False)
+    #     output = self.idx_to_sent(ordered, sentence, self.space)
+    #     return output
+
     def pipeline(self, sentence):
         root, sentence = self.get_all_children(sentence)
-        ordered = self.swap_pair(sentence, root, printPair=False)
+        ordered = self.swap(sentence, root, printPair=False)
         output = self.idx_to_sent(ordered, sentence, self.space)
         return output
-    
 
+   
+class VOSwapper(Swapper):
+    def __init__(self, order=1, space=True):
+        super().__init__("VO", order, space)
+
+    def swap_pair(self, verb_idx, obj_idx, subj, sentence, result, printPair=False):
+        """ Helper function for swapping verb and object"""
+        # result = [1,3,2,4,5], set(2,3), (4,5) => [1,4,5,3,2]
+        res = []
+        verb_chunk = self.get_all_descendant(verb_idx + 1, sentence)
+        obj_chunk = self.get_all_descendant(obj_idx + 1, sentence)
+        subj_chunk = self.get_all_descendant(subj, sentence) # for human names like Arthur Ford
+        verb_chunk = set([x for x in (verb_chunk - obj_chunk) if x > max(subj_chunk)])
+        
+        if printPair:
+            v_words = [sentence[i-1]["word"] for i in verb_chunk]
+            obj_words = [sentence[i-1]["word"] for i in obj_chunk]
+            print("<{}, {}>".format(v_words, obj_words))
+        
+        if len(verb_chunk) == 0: return result # There is a boy on the farm
+        
+        VERB_POS = [result.index(i) for i in verb_chunk]
+        OBJ_POS = [result.index(i) for i in obj_chunk]
+        MAX_POS = max(max(VERB_POS), max(OBJ_POS))
+
+        for pos, idx in enumerate(result):
+            if idx in verb_chunk or pos > MAX_POS: continue
+            res.append(idx)
+        res.extend([idx for idx in result if idx in verb_chunk])
+        res.extend([idx for pos,idx in enumerate(result) if pos > MAX_POS])
+
+        return res
+        
+    
+    def swap(self, sentence, root, printPair=False):
+        """ DFS function for swapping verb and object"""
+        result = [i for i in range(1, len(sentence) + 1)]
+        stack = [root]
+        visited = set()
+
+        while stack:
+            node = stack.pop()
+            if node not in visited:
+                visited.add(node)
+                if not sentence[node-1].get("children", None):
+                    continue
+                for c in sentence[node-1]["children"]:
+                    if sentence[node-1]['posUni'] in Swapper.VERB_POS and \
+                    sentence[c-1]['coarse_dep'] in Swapper.OBJ_ARCS:
+                        verb_idx, obj_idx = node - 1, c - 1
+                        subj = sentence[node-1].get('nsubj', 0)
+                        subj_idx = subj - 1
+                        if obj_idx > subj_idx and obj_idx > verb_idx and verb_idx > subj_idx: # AVOID SPECIAL POSITION
+                            result = self.swap_order_V_O(verb_idx, obj_idx, subj, sentence, result, printPair)
+                    if c not in visited:
+                        stack.append(c)
+
+        return result
