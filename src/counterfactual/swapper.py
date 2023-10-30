@@ -26,14 +26,6 @@ class Swapper():
         self.pair = pair
         self.order = order
         self.space = space
-        self.swap_functions = {"VO": self.v_o_swap, 
-                               "ADP_NP": self.adp_np_swap,
-                               "COP_PRED": None,
-                               "AUX_V": None,
-                               "NOUN_G": None,
-                               "COMP_S": None
-                               }
-        self.swap_pair = self.swap_functions[pair]
 
         self.SPECIAL_MARK = True if pair == "VO" else False # leave special case for mark in VO swapping
         self.SPECIAL_EXPL = True if pair == "VO" else False # leave special case for "there is" in VO swapping
@@ -125,126 +117,18 @@ class Swapper():
 
             sentence[headIndex]["children"] = sentence[headIndex].get("children", []) + [line["index"]]
         return root, sentence
-    
-    def swap_order_V_O(self, verb_idx, obj_idx, subj, sentence, result, printPair=False):
-        """ Helper function for swapping verb and object"""
-        # result = [1,3,2,4,5], set(2,3), (4,5) => [1,4,5,3,2]
-        res = []
-        verb_chunk = self.get_all_descendant(verb_idx + 1, sentence)
-        obj_chunk = self.get_all_descendant(obj_idx + 1, sentence)
-        subj_chunk = self.get_all_descendant(subj, sentence) # for human names like Arthur Ford
-        verb_chunk = set([x for x in (verb_chunk - obj_chunk) if x > max(subj_chunk)])
-        
-        if printPair:
-            v_words = [sentence[i-1]["word"] for i in verb_chunk]
-            obj_words = [sentence[i-1]["word"] for i in obj_chunk]
-            print("<{}, {}>".format(v_words, obj_words))
-        
-        if len(verb_chunk) == 0: return result # There is a boy on the farm
-        
-        VERB_POS = [result.index(i) for i in verb_chunk]
-        OBJ_POS = [result.index(i) for i in obj_chunk]
-        MAX_POS = max(max(VERB_POS), max(OBJ_POS))
-
-        for pos, idx in enumerate(result):
-            if idx in verb_chunk or pos > MAX_POS: continue
-            res.append(idx)
-        res.extend([idx for idx in result if idx in verb_chunk])
-        res.extend([idx for pos,idx in enumerate(result) if pos > MAX_POS])
-
-        return res
-    
-    def v_o_swap(self, sentence, root, printPair=False):
-        """ DFS function for swapping verb and object"""
-        result = [i for i in range(1, len(sentence) + 1)]
-        stack = [root]
-        visited = set()
-
-        while stack:
-            node = stack.pop()
-            if node not in visited:
-                visited.add(node)
-                if not sentence[node-1].get("children", None):
-                    continue
-                for c in sentence[node-1]["children"]:
-                    if sentence[node-1]['posUni'] in Swapper.VERB_POS and \
-                    sentence[c-1]['coarse_dep'] in Swapper.OBJ_ARCS:
-                        verb_idx, obj_idx = node - 1, c - 1
-                        subj = sentence[node-1].get('nsubj', 0)
-                        subj_idx = subj - 1
-                        if obj_idx > subj_idx and obj_idx > verb_idx and verb_idx > subj_idx: # AVOID SPECIAL POSITION
-                            result = self.swap_order_V_O(verb_idx, obj_idx, subj, sentence, result, printPair)
-                    if c not in visited:
-                        stack.append(c)
-
-        return result
-    
-    def swap_order_ADP_NP(self, adp_idx, np_idx, sentence, result, printPair=False):
-        """ Helper function for swapping ADP and NP"""
-        # result = [1,3,2,4,5], set(2,3), (4,5) => [1,4,5,3,2]
-        res = []
-        adp_chunk = self.get_all_descendant(adp_idx + 1, sentence)
-        np_chunk = self.get_all_descendant(np_idx + 1, sentence)
-        np_chunk = set([x for x in (np_chunk - adp_chunk) if x > max(adp_chunk)])
-
-        ADP_POS = [result.index(i) for i in adp_chunk]
-        NP_POS = [result.index(i) for i in np_chunk]
-        MAX_POS = max(max(ADP_POS), max(NP_POS))
-        
-        if printPair:
-            adp_words = [sentence[i-1]["word"] for i in adp_chunk]
-            np_words = [sentence[i-1]["word"] for i in np_chunk]
-            print("<{}, {}>".format(adp_words, np_words))
-
-        for pos, idx in enumerate(result):
-            if idx in adp_chunk or pos > MAX_POS: continue
-            res.append(idx)
-        res.extend([idx for idx in result if idx in adp_chunk])
-        res.extend([idx for pos,idx in enumerate(result) if pos > MAX_POS])
-
-        return res
-    
-    def adp_np_swap(self, sentence, root, printPair=False):
-        """ DFS function for swapping adposition and noun phrase """
-        result = [i for i in range(1, len(sentence) + 1)]
-        stack = [root]
-        visited = set()
-
-        while stack:
-            node = stack.pop()
-            if node not in visited:
-                visited.add(node)
-                if not sentence[node-1].get("children", None):
-                    continue
-                for c in sentence[node-1]["children"]:
-                    if sentence[node-1]['posUni'] in Swapper.NP_POS and \
-                        sentence[c-1]['coarse_dep'] in Swapper.ADP_NP_ARCS and \
-                        sentence[c-1]['posUni'] in Swapper.ADP_POS:
-                            np_idx, adp_idx = node - 1, c - 1
-                            if adp_idx < np_idx: # preposition
-                                result = self.swap_order_ADP_NP(adp_idx, np_idx, sentence, result, printPair)
-                    if c not in visited:
-                        stack.append(c)
-
-        return result
-    
-    def swap_pair(self):
-        pass
-
-    def swap(self):
-        pass
-    
-    # def pipeline(self, sentence):
-    #     root, sentence = self.get_all_children(sentence)
-    #     ordered = self.swap_pair(sentence, root, printPair=False)
-    #     output = self.idx_to_sent(ordered, sentence, self.space)
-    #     return output
 
     def pipeline(self, sentence):
         root, sentence = self.get_all_children(sentence)
         ordered = self.swap(sentence, root, printPair=False)
         output = self.idx_to_sent(ordered, sentence, self.space)
         return output
+        
+    def swap_pair(self):
+        pass
+
+    def swap(self):
+        pass
 
    
 class VOSwapper(Swapper):
@@ -278,8 +162,7 @@ class VOSwapper(Swapper):
         res.extend([idx for pos,idx in enumerate(result) if pos > MAX_POS])
 
         return res
-        
-    
+         
     def swap(self, sentence, root, printPair=False):
         """ DFS function for swapping verb and object"""
         result = [i for i in range(1, len(sentence) + 1)]
@@ -299,7 +182,61 @@ class VOSwapper(Swapper):
                         subj = sentence[node-1].get('nsubj', 0)
                         subj_idx = subj - 1
                         if obj_idx > subj_idx and obj_idx > verb_idx and verb_idx > subj_idx: # AVOID SPECIAL POSITION
-                            result = self.swap_order_V_O(verb_idx, obj_idx, subj, sentence, result, printPair)
+                            result = self.swap_pair(verb_idx, obj_idx, subj, sentence, result, printPair)
+                    if c not in visited:
+                        stack.append(c)
+
+        return result
+
+
+class ADP_NP_Swapper(Swapper):
+    def __init__(self, order=1, space=True):
+        super().__init__("ADP_NP", order, space)
+    
+    def swap_pair(self, adp_idx, np_idx, sentence, result, printPair=False):
+        """ Helper function for swapping ADP and NP"""
+        # result = [1,3,2,4,5], set(2,3), (4,5) => [1,4,5,3,2]
+        res = []
+        adp_chunk = self.get_all_descendant(adp_idx + 1, sentence)
+        np_chunk = self.get_all_descendant(np_idx + 1, sentence)
+        np_chunk = set([x for x in (np_chunk - adp_chunk) if x > max(adp_chunk)])
+
+        ADP_POS = [result.index(i) for i in adp_chunk]
+        NP_POS = [result.index(i) for i in np_chunk]
+        MAX_POS = max(max(ADP_POS), max(NP_POS))
+        
+        if printPair:
+            adp_words = [sentence[i-1]["word"] for i in adp_chunk]
+            np_words = [sentence[i-1]["word"] for i in np_chunk]
+            print("<{}, {}>".format(adp_words, np_words))
+
+        for pos, idx in enumerate(result):
+            if idx in adp_chunk or pos > MAX_POS: continue
+            res.append(idx)
+        res.extend([idx for idx in result if idx in adp_chunk])
+        res.extend([idx for pos,idx in enumerate(result) if pos > MAX_POS])
+
+        return res
+    
+    def swap(self, sentence, root, printPair=False):
+        """ DFS function for swapping adposition and noun phrase """
+        result = [i for i in range(1, len(sentence) + 1)]
+        stack = [root]
+        visited = set()
+
+        while stack:
+            node = stack.pop()
+            if node not in visited:
+                visited.add(node)
+                if not sentence[node-1].get("children", None):
+                    continue
+                for c in sentence[node-1]["children"]:
+                    if sentence[node-1]['posUni'] in Swapper.NP_POS and \
+                        sentence[c-1]['coarse_dep'] in Swapper.ADP_NP_ARCS and \
+                        sentence[c-1]['posUni'] in Swapper.ADP_POS:
+                            np_idx, adp_idx = node - 1, c - 1
+                            if adp_idx < np_idx: # preposition
+                                result = self.swap_pair(adp_idx, np_idx, sentence, result, printPair)
                     if c not in visited:
                         stack.append(c)
 
