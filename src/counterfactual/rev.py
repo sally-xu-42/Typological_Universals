@@ -13,6 +13,14 @@ def create_swapper(pair, order, space):
         return VOSwapper(order, space)
     elif pair == "ADP_NP":
         return None
+    elif pair == "COP_PRED":
+        return None
+    elif pair == "AUX_V":
+        return None
+    elif pair == "NOUN_G":
+        return None
+    elif pair == "COMP_S":
+        return None
     else:
         return None
 

@@ -241,3 +241,23 @@ class ADP_NP_Swapper(Swapper):
                         stack.append(c)
 
         return result
+
+
+class COP_PRED_Swapper(Swapper):
+    def __init__(self, order=1, space=True):
+        super().__init__("COP_PRED", order, space)
+
+
+class AUX_V_Swapper(Swapper):
+    def __init__(self, order=1, space=True):
+        super().__init__("AUX_V", order, space)
+
+
+class NOUN_G_Swapper(Swapper):
+    def __init__(self, order=1, space=True):
+        super().__init__("NOUN_G", order, space)
+
+
+class COMP_S_Swapper(Swapper):
+    def __init__(self, order=1, space=True):
+        super().__init__("COMP_S", order, space)
