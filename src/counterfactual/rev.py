@@ -1,6 +1,6 @@
 import argparse
 from corpus_iterator_funchead import CorpusIteratorFuncHead
-from swapper import Swapper, VOSwapper
+from swapper import Swapper, VOSwapper, ADP_NP_Swapper, COP_PRED_Swapper, AUX_V_Swapper, NOUN_G_Swapper, COMP_S_Swapper
 
 VO_LANG = ["en"]
 OV_LANG = ["ja", "zh-cn", "ko"]
@@ -12,17 +12,17 @@ def create_swapper(pair, order, space):
     if pair == "VO":
         return VOSwapper(order, space)
     elif pair == "ADP_NP":
-        return None
+        return ADP_NP_Swapper(order, space)
     elif pair == "COP_PRED":
-        return None
+        return COP_PRED_Swapper(order, space)
     elif pair == "AUX_V":
-        return None
+        return AUX_V_Swapper(order, space)
     elif pair == "NOUN_G":
-        return None
+        return NOUN_G_Swapper(order, space)
     elif pair == "COMP_S":
-        return None
+        return COMP_S_Swapper(order, space)
     else:
-        return None
+        return Swapper(order, space)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

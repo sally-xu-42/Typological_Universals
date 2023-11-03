@@ -1,0 +1,40 @@
+#!/bin/bash
+
+#SBATCH -n 1
+#SBATCH --cpus-per-task=8
+#SBATCH --mem-per-cpu=16384
+#SBATCH --gpus=1
+#SBATCH --gres=gpumem:11264m
+#SBATCH --time=23:00:00
+#SBATCH --open-mode=truncate
+#SBATCH --mail-type=END,FAIL
+
+
+#! Work directory (i.e. where the job will run):
+workdir="$SLURM_SUBMIT_DIR"  # The value of SLURM_SUBMIT_DIR sets workdir to the directory
+                             # in which sbatch is run.
+
+module purge
+module load eth_proxy gcc/8.2.0 python_gpu/3.9.9
+source $workdir/env2/bin/activate
+
+
+#! Run options for the application:
+prefix="python3"
+application="src/learn/train_tokenizer.py"
+options="${MODEL} ${DATASET} ${LANGUAGE}"
+
+
+cd $workdir
+echo -e "Changed directory to `pwd`.\n"
+
+
+echo -e "JobID: $SLURM_JOB_ID\n======"
+echo "Time: `date`"
+echo "Running on master node: `hostname`"
+echo "Current directory: `pwd`"
+
+
+CMD="$prefix $workdir/$application $options"
+echo -e "\nExecuting command:\n==================\n$CMD\n"
+eval $CMD
