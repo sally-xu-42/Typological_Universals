@@ -27,6 +27,8 @@ class Swapper():
         self.order = order
         self.space = space
 
+        self.SPECIAL_CC = True if pair == "VO" else False
+        self.SPECIAL_COP = True if pair == "VO" else False
         self.SPECIAL_MARK = True if pair == "VO" else False # leave special case for mark in VO swapping
         self.SPECIAL_EXPL = True if pair == "VO" else False # leave special case for "there is" in VO swapping
         self.SPECIAL_ADVCL = True if pair == "VO" else False # leave special case for "there is" in VO swapping
@@ -114,6 +116,23 @@ class Swapper():
                     # this line contains a verb if parser is correct.
                     # we only check if advcl is True when swapping. if so we split the "mark" children with exception of "to"
                     if line["posUni"] == "VERB": line["advcl"] = True
+            
+            # change the head of the object if head is a later verb in sentence and has a prior conj verb
+            # and the prior conj has no objs
+            if self.SPECIAL_CC and \
+            line["coarse_dep"] in Swapper.OBJ_ARCS and \
+            sentence[headIndex].get("has_conj", None):
+                # forget it has a conj if there is an object directly connected to it
+                right_verb_idx = sentence[headIndex]["has_conj"]
+                sentence[right_verb_idx]["conj"] = None
+                sentence[headIndex]["has_conj"] = None
+
+            if self.SPECIAL_CC and \
+            line["coarse_dep"] in Swapper.OBJ_ARCS and \
+            sentence[headIndex].get("conj", None):
+                # change the head verb if the prior conj verb has no obj
+                line["head"] = sentence[headIndex]["conj"] + 1
+                headIndex = sentence[headIndex]["conj"]
 
             sentence[headIndex]["children"] = sentence[headIndex].get("children", []) + [line["index"]]
         return root, sentence
