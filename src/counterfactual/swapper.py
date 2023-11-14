@@ -117,6 +117,12 @@ class Swapper():
                     # we only check if advcl is True when swapping. if so we split the "mark" children with exception of "to"
                     if line["posUni"] == "VERB": line["advcl"] = True
             
+            # TODO: extend the special case to "xcomp" and "ccomp"?
+            if self.SPECIAL_MARK and \
+            line["coarse_dep"] in ["xcomp", "ccomp"] and \
+            line["upos"] == "VERB":
+                line["split_mark"] = True
+            
             # change the head of the object if head is a later verb in sentence and has a prior conj verb
             # and the prior conj has no objs
             if self.SPECIAL_CC and \
