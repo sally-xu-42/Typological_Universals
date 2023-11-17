@@ -32,7 +32,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--pair",
         help="<X,Y> pair that needs to be reversed, e.g. VO, ADP_NP",
-        default="VO",
+        default="ADP_NP",
     )
     parser.add_argument(
         "--filename",
@@ -42,7 +42,12 @@ if __name__ == "__main__":
     parser.add_argument(
         "--output",
         help="output file of plain reordered text that has a specific <X,Y> pair reordered",
-        default="./data/wiki40b-random/regular/en_ov_test.txt"
+        default="./data/wiki40b-random/regular/en_ov_test_adp_np.txt"
+    )
+    parser.add_argument(
+        "--upsample_output",
+        help="output file of plain reordered text for upsampling",
+        default="./data/wiki40b-random/regular/en_ov_upsample_comp_s.txt"
     )
     args = parser.parse_args()
 
@@ -56,7 +61,7 @@ if __name__ == "__main__":
 
     # load and iterate over a corpus
     corpus = CorpusIteratorFuncHead(
-        args.filename, args.language, "train", validate=False, CH_CONVERSION_ORDER=["cop"], SPECIAL_CC=True
+        args.filename, args.language, "train", validate=False, CH_CONVERSION_ORDER=[], SPECIAL_CC=True, SPECIAL_COP=True
     )
     corpusIterator = corpus.iterator()
 
@@ -71,8 +76,8 @@ if __name__ == "__main__":
     # iterate over all sentences in a corpus
     with open(args.output, "w") as file:
         for i, (sentence, newdoc) in enumerate(corpusIterator):
-            output =swapper.pipeline(sentence)
-            if newdoc and i != 0:
+            output = swapper.pipeline(sentence)
+            if i != 0:
                 file.write("\n")
             file.write(output)
             file.write(". ")  # add a period after every sentence, removed the space before period

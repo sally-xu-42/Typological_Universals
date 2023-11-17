@@ -9,7 +9,7 @@ class Swapper():
 
     ADP_NP_ARCS = ["case"]
     ADP_POS = ["ADP"]
-    NP_POS = ["NOUN", "PRON"]
+    NP_POS = ["NOUN", "PROPN"]
 
     COP_PRED_ARCS = ["lifted_cop"]
 
@@ -41,6 +41,8 @@ class Swapper():
     def idx_to_sent(self, idx, sentence, space=True):
         # iterate over all sentences in corpus and write its reversed version
         word_list = [x["word"] for x in sentence]
+        # print(idx)
+        # print(word_list)
         if space:
             output = " ".join([word_list[i-1] for i in idx if not (word_list[i-1] in string.punctuation)])
         else:
@@ -120,7 +122,7 @@ class Swapper():
             # TODO: extend the special case to "xcomp" and "ccomp"?
             if self.SPECIAL_MARK and \
             line["coarse_dep"] in ["xcomp", "ccomp"] and \
-            line["upos"] == "VERB":
+            line["posUni"] == "VERB":
                 line["split_mark"] = True
             
             # change the head of the object if head is a later verb in sentence and has a prior conj verb
@@ -272,17 +274,230 @@ class COP_PRED_Swapper(Swapper):
     def __init__(self, order=1, space=True):
         super().__init__("COP_PRED", order, space)
 
+    def swap_pair(self, cop_idx, pred_idx, sentence, result, printPair=False):
+        """ Helper function for swapping """
+        # result = [1,3,2,4,5], set(2,3), (4,5) => [1,4,5,3,2]
+        res = []
+        cop_chunk = self.get_all_descendant(cop_idx + 1, sentence)
+        pred_chunk = self.get_all_descendant(pred_idx + 1, sentence)
+        cop_chunk = set([x for x in (cop_chunk - pred_chunk) if x > cop_idx])
+
+        COP_POS = [result.index(i) for i in cop_chunk]
+        PRED_POS = [result.index(i) for i in pred_chunk]
+        MAX_POS = max(max(COP_POS), max(PRED_POS))
+
+        if printPair:
+            cop_words = " ".join([sentence[i-1]["word"] for i in cop_chunk])
+            pred_words = " ".join([sentence[i-1]["word"] for i in pred_chunk])
+            print("<{}, {}>".format(cop_words, pred_words))
+        
+        if len(cop_chunk) == 0: return result
+
+        for pos, idx in enumerate(result):
+            if idx in cop_chunk or pos > MAX_POS:
+                # print(f"skipped {idx}")
+                continue
+            # print(f"this {idx} is being added")
+            res.append(idx)
+        # print([idx for idx in result if idx in cop_chunk])
+        res.extend([idx for idx in result if idx in cop_chunk])
+        # print(res)
+        res.extend([idx for pos,idx in enumerate(result) if pos > MAX_POS])
+
+        return res
+    
+    def swap(self, sentence, root, printPair=False):
+        """ DFS function for swapping copula and predicate"""
+        # num_swap = 0
+        result = [i for i in range(1, len(sentence) + 1)]
+        stack = [root]
+        visited = set()
+
+        while stack:
+            node = stack.pop()
+            if node not in visited:
+                visited.add(node)
+                if not sentence[node-1].get("children", None):
+                    # print(f"{node} has no children")
+                    continue
+                for c in sentence[node-1]["children"]:
+                    if sentence[c-1]['coarse_dep'] in Swapper.COP_PRED_ARCS:
+                        cop_idx, pred_idx = node - 1, c - 1
+                        if cop_idx < pred_idx: # <cop, pred>
+                            # num_swap += 1
+                            result = self.swap_pair(cop_idx, pred_idx, sentence, result, printPair)
+                            # if verbose:
+                            #     print(f"Result at the {num_swap}-th step is: {idx_to_sent(result, sentence)}")
+                    if c not in visited:
+                        stack.append(c)
+        
+        # print(f"Total number of swaps is: {num_swap}")
+        return result
+
 
 class AUX_V_Swapper(Swapper):
     def __init__(self, order=1, space=True):
         super().__init__("AUX_V", order, space)
+    
+    def swap_pair(self, aux_idx, verb_idx, sentence, result, printPair=False):
+        """ Helper function for swapping """
+        # result = [1,3,2,4,5], set(2,3), (4,5) => [1,4,5,3,2]
+        res = []
+        aux_chunk = self.get_all_descendant(aux_idx + 1, sentence)
+        # print(aux_chunk)
+        verb_chunk = self.get_all_descendant(verb_idx + 1, sentence)
+        verb_chunk = set(i for i in verb_chunk if i > aux_idx + 1)
+        # print(verb_chunk)
+        aux_chunk = set([x for x in (aux_chunk - verb_chunk) if x > aux_idx])
+
+        AUX_POS = [result.index(i) for i in aux_chunk]
+        VERB_POS = [result.index(i) for i in verb_chunk]
+        MAX_POS = max(max(AUX_POS), max(VERB_POS))
+
+        if printPair:
+            aux_words = " ".join([sentence[i-1]["text"] for i in aux_chunk])
+            verb_words = " ".join([sentence[i-1]["text"] for i in verb_chunk])
+            print("<{}, {}>".format(aux_words, verb_words))
+
+        if len(aux_chunk) == 0: return result
+
+        for pos, idx in enumerate(result):
+            if idx in aux_chunk or pos > MAX_POS:
+                # print(f"skipped {idx}")
+                continue
+            # print(f"this {idx} is being added")
+            res.append(idx)
+        res.extend([idx for idx in result if idx in aux_chunk])
+        res.extend([idx for pos,idx in enumerate(result) if pos > MAX_POS])
+
+        return res
+
+    def swap(self, sentence, root, printPair=False):
+        """ DFS function for swapping AUX and VERB """
+        result = [i for i in range(1, len(sentence) + 1)]
+        stack = [root]
+        visited = set()
+
+        while stack:
+            node = stack.pop()
+            if node not in visited:
+                visited.add(node)
+                if not sentence[node-1].get("children", None):
+                    continue
+                for c in sentence[node-1]["children"]:
+                    if sentence[c-1]['coarse_dep'] in Swapper.AUX_VERB_ARCS:
+                        verb_idx, aux_idx = node - 1, c - 1
+                        if aux_idx < verb_idx: # <aux, verb>
+                            result = self.swap_pair(aux_idx, verb_idx, sentence, result, printPair)
+                    if c not in visited:
+                        stack.append(c)
+
+        return result
 
 
 class NOUN_G_Swapper(Swapper):
     def __init__(self, order=1, space=True):
         super().__init__("NOUN_G", order, space)
+    
+    def swap_pair(self, noun_idx, g_idx, sentence, result, printPair=False):
+        """ Helper function for swapping """
+        # result = [1,3,2,4,5], set(2,3), (4,5) => [1,4,5,3,2]
+        res = []
+        g_chunk = self.get_all_descendant(g_idx + 1, sentence)
+        # print(g_chunk)
+        g_chunk = [i for i in g_chunk if i <= g_idx + 1]
+        # print(g_chunk)
+
+        NOUN_POS = result.index(noun_idx + 1)
+        G_POS = [result.index(i) for i in g_chunk]
+        MAX_POS = max(G_POS)
+
+        if printPair:
+            noun_word = sentence[noun_idx]["text"]
+            g_words = " ".join([sentence[i-1]["text"] for i in g_chunk])
+            print("<{}, {}>".format(noun_word, g_words))
+
+        for pos, idx in enumerate(result):
+            if pos == NOUN_POS or pos > MAX_POS:
+                continue
+            res.append(idx)
+        res.append(noun_idx+1)
+        res.extend([idx for pos,idx in enumerate(result) if pos > MAX_POS])
+
+        return res
+    
+    def swap(self, sentence, root, printPair=False):
+        """ DFS function for swapping NOUN and G """
+        result = [i for i in range(1, len(sentence) + 1)]
+        stack = [root]
+        visited = set()
+
+        while stack:
+            node = stack.pop()
+            if node not in visited:
+                visited.add(node)
+                if not sentence[node-1].get("children", None):
+                    continue
+                for c in sentence[node-1]["children"]:
+                    if sentence[c-1]['coarse_dep'] in Swapper.NOUN_G_ARCS:
+                        # print(f"The pair is {node} and {c}")
+                        noun_idx, g_idx = node - 1, c - 1
+                        if noun_idx < g_idx: # <Noun, Genitive>
+                            result = self.swap_pair(noun_idx, g_idx, sentence, result, printPair)
+                    if c not in visited:
+                        stack.append(c)
+
+        return result
 
 
 class COMP_S_Swapper(Swapper):
     def __init__(self, order=1, space=True):
         super().__init__("COMP_S", order, space)
+    
+    def swap_pair(self, comp_idx, s_idx, sentence, result, printPair=False):
+        """ Helper function for swapping """
+        # result = [1,3,2,4,5], set(2,3), (4,5) => [1,4,5,3,2]
+        res = []
+        s_chunk = self.get_all_descendant(s_idx + 1, sentence)
+        s_chunk.remove(comp_idx + 1)
+
+        COMP_POS = result.index(comp_idx + 1)
+        S_POS = [result.index(i) for i in s_chunk if i > COMP_POS]
+        MAX_POS = max(S_POS)
+
+        if printPair:
+            comp_word = sentence[comp_idx]["text"]
+            s_words = " ".join([sentence[i-1]["text"] for i in s_chunk])
+            print("<{}, {}>".format(comp_word, s_words))
+
+        for pos, idx in enumerate(result):
+            if pos == COMP_POS or pos > MAX_POS:
+                continue
+            res.append(idx)
+        res.append(comp_idx+1)
+        res.extend([idx for pos,idx in enumerate(result) if pos > MAX_POS])
+
+        return res
+    
+    def swap(self, sentence, root, printPair=False):
+        """ DFS function for swapping COMP and S """
+        result = [i for i in range(1, len(sentence) + 1)]
+        stack = [root]
+        visited = set()
+
+        while stack:
+            node = stack.pop()
+            if node not in visited:
+                visited.add(node)
+                if not sentence[node-1].get("children", None):
+                    continue
+                for c in sentence[node-1]["children"]:
+                    if sentence[c-1]['coarse_dep'] in Swapper.COMP_S_ARCS:
+                        # print(f"The pair is {node} and {c}")
+                        s_idx, comp_idx = node - 1, c - 1
+                        if comp_idx < s_idx: # <Complementizer, S>
+                            result = self.swap_pair(comp_idx, s_idx, sentence, result, printPair)
+                    if c not in visited:
+                        stack.append(c)
+
+        return result

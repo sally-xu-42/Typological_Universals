@@ -33,7 +33,9 @@ def check_conj(i, p_idx, grandp_idx, sentence):
     return sentence
 
 
-def reverse_content_head(sentence, validate=True, CH_CONVERSION_ORDER=["cc","case","cop","mark"], SPECIAL_CC=False, SPECIAL_COP=False):
+def reverse_content_head(sentence, validate=True, 
+                         CH_CONVERSION_ORDER=["cc","case","cop","mark"], 
+                         SPECIAL_CC=False, SPECIAL_COP=False):
     """Apply dependency parse convention change (deviation from vanilla UD)
 
     Args:
@@ -114,7 +116,7 @@ def reverse_content_head(sentence, validate=True, CH_CONVERSION_ORDER=["cc","cas
 class CorpusIteratorFuncHead:
     def __init__(
         self, filename, language, partition="train", storeMorph=False, validate=True, 
-        CH_CONVERSION_ORDER=["cc","case","cop","mark"], SPECIAL_CC=False
+        CH_CONVERSION_ORDER=["cc","case","cop","mark"], SPECIAL_CC=False, SPECIAL_COP=False
     ):
         self.basis = CorpusIterator(
             filename, language, partition=partition, storeMorph=storeMorph,
@@ -122,17 +124,19 @@ class CorpusIteratorFuncHead:
         self.validate = validate
         self.CH_CONVERSION_ORDER = CH_CONVERSION_ORDER
         self.SPECIAL_CC = SPECIAL_CC
+        self.SPECIAL_COP = SPECIAL_COP
 
     def iterator(self, rejectShortSentences=False):
         iterator = self.basis.iterator(rejectShortSentences=rejectShortSentences)
         for sentence, newdoc in iterator:
             r = reverse_content_head(sentence, validate=self.validate, 
                                      CH_CONVERSION_ORDER=self.CH_CONVERSION_ORDER,
-                                     SPECIAL_CC=self.SPECIAL_CC)
+                                     SPECIAL_CC=self.SPECIAL_CC,
+                                     SPECIAL_COP=self.SPECIAL_COP)
             if r is None:
                 continue
             yield sentence, newdoc
 
     def getSentence(self, index):
         sentence, newdoc = self.basis.getSentence(index)
-        return reverse_content_head(sentence, validate=self.validate, CH_CONVERSION_ORDER=self.CH_CONVERSION_ORDER, SPECIAL_CC=self.SPECIAL_CC), newdoc
+        return reverse_content_head(sentence, validate=self.validate, CH_CONVERSION_ORDER=self.CH_CONVERSION_ORDER, SPECIAL_CC=self.SPECIAL_CC, SPECIAL_COP=self.SPECIAL_COP), newdoc
