@@ -77,7 +77,7 @@ if __name__ == "__main__":
     with open(args.output, "w") as file:
         for i, (sentence, newdoc) in enumerate(corpusIterator):
             output = swapper.pipeline(sentence)
-            if i != 0:
+            if newdoc and i != 0:
                 file.write("\n")
             file.write(output)
             file.write(". ")  # add a period after every sentence, removed the space before period

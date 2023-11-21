@@ -437,4 +437,4 @@ if __name__ == "__main__":
             if newdoc and i != 0:
                 file.write("\n")
             file.write(output)
-            file.write(" . ")  # add a period after every sentence
+            file.write(". ")  # add a period after every sentence, removed space before period
