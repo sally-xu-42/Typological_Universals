@@ -1,4 +1,5 @@
 #!/bin/bash
+export STANZA_RESOURCES_DIR="$SLURM_SUBMIT_DIR"
 
 language="en"
 do_test=False
@@ -49,5 +50,5 @@ echo "Output directory: $output_dir"
 # TRAIN_SAMPLE="${TRAIN_SAMPLE:-default_value}"
 
 LANGUAGE=${language} DATA_DIR="${data_dir:-'./data/wiki40b-txt'}" \
-PARSE_DIR="${parse_dir:-'./data/wiki40b-baseline'}" \
+OUTPUT_DIR="${parse_dir:-'./data/wiki40b-baseline'}" \
 sbatch --output="./logs/baseline/remove_${language}_${timestamp}.out" scripts/remove_punct.euler

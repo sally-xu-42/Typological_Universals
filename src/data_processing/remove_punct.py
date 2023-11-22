@@ -92,4 +92,6 @@ if __name__ == "__main__":
     # Process each file
     for in_file, out_file in zip(input_path, output_path):
         remove_punct_and_lowercase(in_file, out_file, nlp)
+    
+    sys.stderr.write("Job finished!")
 
