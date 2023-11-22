@@ -27,11 +27,12 @@ class Swapper():
         self.order = order
         self.space = space
 
-        self.SPECIAL_CC = True if pair == "VO" else False
+        self.SPECIAL_CC = True if pair in ["VO, AUX_V"] else False
         self.SPECIAL_COP = True if pair == "VO" else False
         self.SPECIAL_MARK = True if pair == "VO" else False # leave special case for mark in VO swapping
         self.SPECIAL_EXPL = True if pair == "VO" else False # leave special case for "there is" in VO swapping
         self.SPECIAL_ADVCL = True if pair == "VO" else False # leave special case for "there is" in VO swapping
+        self.SPECIAL_CONJ = True if pair == "AUX_V" else False # special case for conj, applies to <AUX, V>
 
     def makeCoarse(self, x):
         if ":" in x:
@@ -59,6 +60,15 @@ class Swapper():
         else:
             return False
     
+    def check_conjunction(self, child_id, parent_id, sentence):
+        """ helper function for AUX_V swapper to check if the child is a mark of the parent """
+        if sentence[child_id-1]["deprel"] == "conj" and \
+            (not sentence[parent_id-1].get("has_conj", None)):
+            # print("Here I am")
+            return True
+        else:
+            return False
+    
     def get_all_descendant(self, id, sentence):
         """ DFS function for getting all descendants """
         stack = [id]
@@ -68,15 +78,21 @@ class Swapper():
             node = stack.pop()
             if (node == 0) or (not sentence[node-1].get("children", None)):
                 continue
-            if not self.SPECIAL_MARK:
-                for c in sentence[node-1]['children']:
-                    stack.append(c)
-                    res.append(c)
-            else:
+
+            if self.SPECIAL_MARK:
                 for c in sentence[node-1]['children']:
                     if not self.check_mark(c, node, sentence):
                         stack.append(c)
                         res.append(c)
+            elif self.SPECIAL_CONJ:
+                for c in sentence[node-1]['children']:
+                    if not self.check_conjunction(c, node, sentence):
+                        stack.append(c)
+                        res.append(c)
+            else:
+                for c in sentence[node-1]['children']:
+                    stack.append(c)
+                    res.append(c)
 
         return set([id] + res)
     
@@ -130,7 +146,7 @@ class Swapper():
             if self.SPECIAL_CC and \
             line["coarse_dep"] in Swapper.OBJ_ARCS and \
             sentence[headIndex].get("has_conj", None):
-                # forget it has a conj if there is an object directly connected to it
+                # forget the verbs are conjuncted if there is an object directly connected to the prior verb
                 right_verb_idx = sentence[headIndex]["has_conj"]
                 sentence[right_verb_idx]["conj"] = None
                 sentence[headIndex]["has_conj"] = None
@@ -141,6 +157,14 @@ class Swapper():
                 # change the head verb if the prior conj verb has no obj
                 line["head"] = sentence[headIndex]["conj"] + 1
                 headIndex = sentence[headIndex]["conj"]
+            
+            if self.SPECIAL_CC and \
+            line["coarse_dep"] in Swapper.AUX_VERB_ARCS and \
+            sentence[headIndex].get("conj", None):
+                # forget the verbs are conjuncted if there is an aux directly connected to the later verb
+                left_verb_idx = sentence[headIndex]["conj"]
+                sentence[headIndex]["conj"] = None
+                sentence[left_verb_idx]["has_conj"] = None
 
             sentence[headIndex]["children"] = sentence[headIndex].get("children", []) + [line["index"]]
         return root, sentence
