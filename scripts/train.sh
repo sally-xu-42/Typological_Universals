@@ -19,7 +19,7 @@ Help()
    echo "options:"
    echo "n     Model name (gpt2 or roberta). Default: gpt2"
    echo "l     Language to train on. Default: en"
-   echo "d     Dataset txt files to use. Default: wiki40b-txt"
+   echo "d     Dataset txt files to use. Default: wiki40b"
    echo "t     Path to custom tokenizer"
    echo "s     Random seed number. Default: 42"
    echo "c     Checkpoint path to resume training"
