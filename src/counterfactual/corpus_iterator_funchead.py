@@ -61,8 +61,11 @@ def reverse_content_head(sentence, validate=True,
                 assert sentence[i]["index"] == i + 1
 
                 # move subject cc, and conj in predicate's children to be child of cop
+                # move mark in predicate's children to be child of cop
+                # move aux in predicate's children to be child of cop
+                # move advmod in predicate's children to be child of cop
                 for j in range(len(sentence)):
-                    if sentence[j]["head"] == head + 1 and j != i and sentence[j]["dep"] in ["nsubj", "csubj", "cc", "conj"]:
+                    if sentence[j]["head"] == head + 1 and j != i and sentence[j]["dep"] in ["nsubj", "csubj", "cc", "conj", "mark", "aux", "advmod"]:
                         sentence[j]["head"] = i + 1
 
     if SPECIAL_CC: # SPECIAL_CC take care of the reverse VO case when we need to differentiate cc connecting verbs or non-verbs
