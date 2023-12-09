@@ -80,7 +80,7 @@ class Swapper():
     
     def check_conjunction(self, child_id, parent_id, sentence):
         """ helper function for some swappers """
-        if sentence[child_id-1]["deprel"] == "conj" and \
+        if sentence[child_id-1]["coarse_dep"] == "conj" and \
             (not sentence[parent_id-1].get("has_conj", None)) and \
             (not sentence[child_id-1].get("conj", None)):
             return True
@@ -540,9 +540,10 @@ class NOUN_G_Swapper(Swapper):
                         # print(f"The pair is {node} and {c}")
                         noun_idx, g_idx = node - 1, c - 1
                         flag = False
-                        for i in sentence[g_idx]["children"]:
-                            if sentence[i-1]['word'] == 'of':
-                                flag = True
+                        if sentence[g_idx].get("children", None):
+                            for i in sentence[g_idx]["children"]:
+                                if sentence[i-1]['word'] == 'of':
+                                    flag = True
                         if noun_idx < g_idx and flag: # <Noun, Genitive>
                             num_swaps += 1
                             result = self.swap_pair(noun_idx, g_idx, sentence, result, printPair)

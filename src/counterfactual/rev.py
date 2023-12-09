@@ -7,22 +7,22 @@ OV_LANG = ["ja", "zh-cn", "ko"]
 NON_SPACE_LANG = ["ja", "ko", "zh-cn"]
 REV_PAIR_ORDERS = ["VO", "ADP_NP", "COP_PRED", "AUX_V", "NOUN_G", "COMP_S"]
 
-def create_swapper(pair, order, space):
+def create_swapper(pair, order, space, upsample):
     """ factory function for instantiating the actual Swapper object """
     if pair == "VO":
-        return VOSwapper(order, space)
+        return VOSwapper(order, space, upsample)
     elif pair == "ADP_NP":
-        return ADP_NP_Swapper(order, space)
+        return ADP_NP_Swapper(order, space, upsample)
     elif pair == "COP_PRED":
-        return COP_PRED_Swapper(order, space)
+        return COP_PRED_Swapper(order, space, upsample)
     elif pair == "AUX_V":
-        return AUX_V_Swapper(order, space)
+        return AUX_V_Swapper(order, space, upsample)
     elif pair == "NOUN_G":
-        return NOUN_G_Swapper(order, space)
+        return NOUN_G_Swapper(order, space, upsample)
     elif pair == "COMP_S":
-        return COMP_S_Swapper(order, space)
+        return COMP_S_Swapper(order, space, upsample)
     else:
-        return Swapper(order, space)
+        return Swapper(order, space, upsample)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -32,7 +32,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--pair",
         help="<X,Y> pair that needs to be reversed, e.g. VO, ADP_NP",
-        default="ADP_NP",
+        default="COMP_S",
     )
     parser.add_argument(
         "--filename",
@@ -42,7 +42,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--output",
         help="output file of plain reordered text that has a specific <X,Y> pair reordered",
-        default="./data/wiki40b-random/regular/en_ov_test_adp_np.txt"
+        default="./data/wiki40b-random/regular/en_s_comp.txt"
     )
     parser.add_argument(
         "--upsample",
@@ -52,7 +52,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--upsample_output",
         help="output file of plain reordered text for upsampling",
-        default="./data/wiki40b-random/regular/en_ov_upsample_comp_s.txt"
+        default="./data/wiki40b-random/upsample/en_s_comp.txt"
     )
     args = parser.parse_args()
 
@@ -74,23 +74,24 @@ if __name__ == "__main__":
     space = False if args.language in NON_SPACE_LANG else True
     # 1 for VO, 2 for OV
     order = 1 if args.language in VO_LANG else 2
+    upsample = args.upsample
 
     # load the swapper for a specific pair
-    swapper = create_swapper(args.pair, order, space, args.upsample)
+    swapper = create_swapper(args.pair, order, space, upsample)
 
     if args.upsample:
         # UPSAMPLE MODE for 20 swapped examples
         SAMPLE_NUM = 20
+        count = 0
         with open(args.upsample_output, "w") as upsample_file:
-            count = 0
             for i, (sentence, newdoc) in enumerate(corpusIterator):
                 output = swapper.pipeline(sentence)
                 if output:
-                    count += 1
-                    if newdoc and i != 0:
+                    if count != 0:
                         upsample_file.write("\n")
                     upsample_file.write(output)
                     upsample_file.write(". ")  # Add a period after every sentence
+                    count += 1
                 if count >= SAMPLE_NUM:
                     break
     else:
