@@ -3,6 +3,7 @@ import argparse
 import re
 import os
 import sys
+from corpus_iterator_funchead import CorpusIteratorFuncHead
 
 SAMPLE_NUM = 100
 
@@ -46,6 +47,61 @@ def sample(lang, parse_dir, output_dir):
 
     sys.stderr.write(f"INFO: {SAMPLE_NUM} random sentences saved to {output_text_path}\n")
     sys.stderr.write(f"INFO: {SAMPLE_NUM} random parses saved to {output_parse_path}\n")
+
+
+def upsample(pair):
+    pass
+# def sample_swapper(lang, pair, parse_dir, output_dir):
+#     """ Upsampling for swapper sanity check, check randomly 1000 or stop until reached 20 swapped samples """
+#     if not os.path.exists(parse_dir):
+#         os.system(f"mkdir -p {parse_dir}")
+
+#     input_path = os.path.join(parse_dir, f"{lang}_train.conllu")
+#     output_text_path = os.path.join(output_dir, f"{lang}_{pair}_sample.txt")
+#     output_parse_path = os.path.join(output_dir, f"{lang}_{pair}_sample.conllu")
+
+#     with open(input_path, "r") as f_in:
+#         sent_counter = 0
+#         for line in f_in:
+#             if line.strip() == "":
+#                 sent_counter += 1
+#     num_sentences = sent_counter - 1
+#     sys.stderr.write(f"INFO: There are {num_sentences} sentences in this CoNLL-U file\n")
+
+#     # Randomly select 100 numbers from the range 1 to num_sentences
+#     random_idx_list = sorted(random.sample(range(num_sentences), 1000))
+
+#     # load and iterate over a corpus
+#     corpus = CorpusIteratorFuncHead(
+#         args.filename, args.language, "train", validate=False, CH_CONVERSION_ORDER=["cop"], SPECIAL_CC=True
+#     )
+#     corpusIterator = corpus.iterator()
+
+#     with open(input_path, "r") as f_in, open(output_parse_path, "w") as f_parse_out, open(output_text_path, "w") as f_text_out:
+#         current_idx = 0
+#         for line in f_in:        
+#             if current_idx in random_idx_list:
+#                 # TODO: start changing here
+#                 # f_parse_out.write(line)
+#                 # if line.startswith("# text"):
+#                 #     match = re.search(r'# text = (.+)', line)
+#                 #     if match: 
+#                 #         random_sentence = match.group(1).strip()
+#                 #         f_text_out.write(random_sentence)
+#                 #         f_text_out.write("\n")
+#                 if line.strip() == "":
+#                     current_idx += 1
+#             elif line.strip() == "":
+#                 current_idx += 1
+#             else:
+#                 continue
+
+#     sys.stderr.write(f"INFO: {SAMPLE_NUM} random sentences saved to {output_text_path}\n")
+#     sys.stderr.write(f"INFO: {SAMPLE_NUM} random parses saved to {output_parse_path}\n")
+
+
+def swap_rate():
+    pass
 
 
 if __name__ == "__main__":

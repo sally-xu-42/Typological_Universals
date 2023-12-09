@@ -45,6 +45,11 @@ if __name__ == "__main__":
         default="./data/wiki40b-random/regular/en_ov_test_adp_np.txt"
     )
     parser.add_argument(
+        "--upsample",
+        help="upsampling mode to only keep swapped sentences",
+        action="store_true"
+    )
+    parser.add_argument(
         "--upsample_output",
         help="output file of plain reordered text for upsampling",
         default="./data/wiki40b-random/regular/en_ov_upsample_comp_s.txt"
@@ -71,13 +76,25 @@ if __name__ == "__main__":
     order = 1 if args.language in VO_LANG else 2
 
     # load the swapper for a specific pair
-    swapper = create_swapper(args.pair, order, space)
+    swapper = create_swapper(args.pair, order, space, args.upsample)
 
-    # iterate over all sentences in a corpus
-    with open(args.output, "w") as file:
-        for i, (sentence, newdoc) in enumerate(corpusIterator):
-            output = swapper.pipeline(sentence)
-            if newdoc and i != 0:
-                file.write("\n")
-            file.write(output)
-            file.write(". ")  # add a period after every sentence, removed the space before period
+    if args.upsample:
+        # UPSAMPLE MODE
+        with open(args.upsample_output, "w") as upsample_file:
+            for i, (sentence, newdoc) in enumerate(corpusIterator):
+                output = swapper.pipeline(sentence)
+                if newdoc and i != 0:
+                    upsample_file.write("\n")
+                upsample_file.write(output)
+                upsample_file.write(". ")  # Add a period after every sentence
+
+    else:
+        # NORMAL MODE
+        # iterate over all sentences in a corpus
+        with open(args.output, "w") as file:
+            for i, (sentence, newdoc) in enumerate(corpusIterator):
+                output = swapper.pipeline(sentence)
+                if newdoc and i != 0:
+                    file.write("\n")
+                file.write(output)
+                file.write(". ")  # add a period after every sentence, removed the space before period

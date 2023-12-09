@@ -20,11 +20,12 @@ class Swapper():
 
     COMP_S_ARCS = ["mark"]
 
-    def __init__(self, pair, order=1, space=True):
+    def __init__(self, pair, order=1, space=True, upsample=False):
 
         self.pair = pair
         self.order = order
         self.space = space
+        self.upsample = upsample
 
         self.SPECIAL_CC = True if pair in ["VO, AUX_V"] else False
         self.SPECIAL_COP = True if pair == "VO" else False
@@ -248,8 +249,8 @@ class Swapper():
 
    
 class VOSwapper(Swapper):
-    def __init__(self, order=1, space=True):
-        super().__init__("VO", order, space)
+    def __init__(self, order=1, space=True, upsample=False):
+        super().__init__("VO", order, space, upsample)
 
     def swap_pair(self, verb_idx, obj_idx, subj, sentence, result, printPair=False):
         """ Helper function for swapping verb and object"""
@@ -308,8 +309,8 @@ class VOSwapper(Swapper):
 
 
 class ADP_NP_Swapper(Swapper):
-    def __init__(self, order=1, space=True):
-        super().__init__("ADP_NP", order, space)
+    def __init__(self, order=1, space=True, upsample=False):
+        super().__init__("ADP_NP", order, space, upsample)
     
     def swap_pair(self, adp_idx, np_idx, sentence, result, printPair=False):
         """ Helper function for swapping ADP and NP"""
@@ -362,8 +363,8 @@ class ADP_NP_Swapper(Swapper):
 
 
 class COP_PRED_Swapper(Swapper):
-    def __init__(self, order=1, space=True):
-        super().__init__("COP_PRED", order, space)
+    def __init__(self, order=1, space=True, upsample=False):
+        super().__init__("COP_PRED", order, space, upsample)
 
     def swap_pair(self, cop_idx, pred_idx, sentence, result, printPair=False):
         """ Helper function for swapping """
@@ -420,8 +421,8 @@ class COP_PRED_Swapper(Swapper):
 
 
 class AUX_V_Swapper(Swapper):
-    def __init__(self, order=1, space=True):
-        super().__init__("AUX_V", order, space)
+    def __init__(self, order=1, space=True, upsample=False):
+        super().__init__("AUX_V", order, space, upsample)
     
     def swap_pair(self, aux_idx, verb_idx, subj, sentence, result, printPair=False):
         """ Helper function for swapping """
@@ -480,8 +481,8 @@ class AUX_V_Swapper(Swapper):
 
 
 class NOUN_G_Swapper(Swapper):
-    def __init__(self, order=1, space=True):
-        super().__init__("NOUN_G", order, space)
+    def __init__(self, order=1, space=True, upsample=False):
+        super().__init__("NOUN_G", order, space, upsample)
     
     def swap_pair(self, noun_idx, g_idx, sentence, result, printPair=False):
         """ Helper function for swapping """
@@ -541,8 +542,8 @@ class NOUN_G_Swapper(Swapper):
 
 
 class NOUN_RELCL_Swapper(Swapper):
-    def __init__(self, order=1, space=True):
-        super().__init__("NOUN_RELCL", order, space)
+    def __init__(self, order=1, space=True, upsample=False):
+        super().__init__("NOUN_RELCL", order, space, upsample)
 
     def swap_pair(self, noun_idx, cl_idx, sentence, result, printPair=False):
         """ Helper function for swapping noun and relative clause"""
@@ -594,8 +595,8 @@ class NOUN_RELCL_Swapper(Swapper):
 
 
 class COMP_S_Swapper(Swapper):
-    def __init__(self, order=1, space=True):
-        super().__init__("COMP_S", order, space)
+    def __init__(self, order=1, space=True, upsample=False):
+        super().__init__("COMP_S", order, space, upsample)
     
     def swap_pair(self, comp_idx, s_idx, sentence, result, printPair=False):
         """ Helper function for swapping """
