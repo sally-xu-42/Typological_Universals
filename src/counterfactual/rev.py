@@ -79,15 +79,20 @@ if __name__ == "__main__":
     swapper = create_swapper(args.pair, order, space, args.upsample)
 
     if args.upsample:
-        # UPSAMPLE MODE
+        # UPSAMPLE MODE for 20 swapped examples
+        SAMPLE_NUM = 20
         with open(args.upsample_output, "w") as upsample_file:
+            count = 0
             for i, (sentence, newdoc) in enumerate(corpusIterator):
                 output = swapper.pipeline(sentence)
-                if newdoc and i != 0:
-                    upsample_file.write("\n")
-                upsample_file.write(output)
-                upsample_file.write(". ")  # Add a period after every sentence
-
+                if output:
+                    count += 1
+                    if newdoc and i != 0:
+                        upsample_file.write("\n")
+                    upsample_file.write(output)
+                    upsample_file.write(". ")  # Add a period after every sentence
+                if count >= SAMPLE_NUM:
+                    break
     else:
         # NORMAL MODE
         # iterate over all sentences in a corpus

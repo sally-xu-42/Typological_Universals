@@ -42,8 +42,6 @@ class Swapper():
     def idx_to_sent(self, idx, sentence, space=True):
         # iterate over all sentences in corpus and write its reversed version
         word_list = [x["word"] for x in sentence]
-        # print(idx)
-        # print(word_list)
         if space:
             output = " ".join([word_list[i-1] for i in idx if not (word_list[i-1] in string.punctuation)])
         else:
@@ -237,9 +235,14 @@ class Swapper():
 
     def pipeline(self, sentence):
         root, sentence = self.get_all_children(sentence)
-        ordered = self.swap(sentence, root, printPair=False)
-        output = self.idx_to_sent(ordered, sentence, self.space)
-        return output
+        num_swaps, ordered = self.swap(sentence, root, printPair=False)
+        if self.upsample and num_swaps == 0:
+            # upsample process
+            print("Skipped")
+            return None
+        else:
+            output = self.idx_to_sent(ordered, sentence, self.space)
+            return output
         
     def swap_pair(self):
         pass
@@ -284,6 +287,7 @@ class VOSwapper(Swapper):
          
     def swap(self, sentence, root, printPair=False):
         """ DFS function for swapping verb and object"""
+        num_swaps = 0
         result = [i for i in range(1, len(sentence) + 1)]
         stack = [root]
         visited = set()
@@ -301,11 +305,12 @@ class VOSwapper(Swapper):
                         subj = sentence[node-1].get('nsubj', 0)
                         subj_idx = subj - 1
                         if obj_idx > subj_idx and obj_idx > verb_idx and verb_idx > subj_idx: # AVOID SPECIAL POSITION
+                            num_swaps += 1
                             result = self.swap_pair(verb_idx, obj_idx, subj, sentence, result, printPair)
                     if c not in visited:
                         stack.append(c)
 
-        return result
+        return num_swaps, result
 
 
 class ADP_NP_Swapper(Swapper):
@@ -339,6 +344,7 @@ class ADP_NP_Swapper(Swapper):
     
     def swap(self, sentence, root, printPair=False):
         """ DFS function for swapping adposition and noun phrase """
+        num_swaps = 0
         result = [i for i in range(1, len(sentence) + 1)]
         stack = [root]
         visited = set()
@@ -355,11 +361,12 @@ class ADP_NP_Swapper(Swapper):
                         sentence[c-1]['posUni'] in Swapper.ADP_POS:
                             np_idx, adp_idx = node - 1, c - 1
                             if adp_idx < np_idx: # <ADP, NP>
+                                num_swaps += 1
                                 result = self.swap_pair(adp_idx, np_idx, sentence, result, printPair)
                     if c not in visited:
                         stack.append(c)
 
-        return result
+        return num_swaps, result
 
 
 class COP_PRED_Swapper(Swapper):
@@ -396,7 +403,7 @@ class COP_PRED_Swapper(Swapper):
     
     def swap(self, sentence, root, printPair=False):
         """ DFS function for swapping copula and predicate"""
-        # num_swap = 0
+        num_swaps = 0
         result = [i for i in range(1, len(sentence) + 1)]
         stack = [root]
         visited = set()
@@ -411,13 +418,13 @@ class COP_PRED_Swapper(Swapper):
                     if sentence[c-1]['coarse_dep'] in Swapper.COP_PRED_ARCS:
                         cop_idx, pred_idx = node - 1, c - 1
                         if cop_idx < pred_idx: # <cop, pred>
-                            # num_swap += 1
+                            num_swaps += 1
                             result = self.swap_pair(cop_idx, pred_idx, sentence, result, printPair)
                     if c not in visited:
                         stack.append(c)
         
         # print(f"Total number of swaps is: {num_swap}")
-        return result
+        return num_swaps, result
 
 
 class AUX_V_Swapper(Swapper):
@@ -457,6 +464,7 @@ class AUX_V_Swapper(Swapper):
 
     def swap(self, sentence, root, printPair=False):
         """ DFS function for swapping AUX and VERB """
+        num_swaps = 0
         result = [i for i in range(1, len(sentence) + 1)]
         stack = [root]
         visited = set()
@@ -473,11 +481,12 @@ class AUX_V_Swapper(Swapper):
                         subj = sentence[node-1].get('nsubj', 0)
                         subj_idx = subj - 1
                         if aux_idx < verb_idx and subj_idx < aux_idx: # <subj, aux, verb>
+                            num_swaps += 1
                             result = self.swap_pair(aux_idx, verb_idx, subj, sentence, result, printPair)
                     if c not in visited:
                         stack.append(c)
 
-        return result
+        return num_swaps, result
 
 
 class NOUN_G_Swapper(Swapper):
@@ -515,6 +524,7 @@ class NOUN_G_Swapper(Swapper):
     
     def swap(self, sentence, root, printPair=False):
         """ DFS function for swapping NOUN and G """
+        num_swaps = 0
         result = [i for i in range(1, len(sentence) + 1)]
         stack = [root]
         visited = set()
@@ -534,11 +544,12 @@ class NOUN_G_Swapper(Swapper):
                             if sentence[i-1]['word'] == 'of':
                                 flag = True
                         if noun_idx < g_idx and flag: # <Noun, Genitive>
+                            num_swaps += 1
                             result = self.swap_pair(noun_idx, g_idx, sentence, result, printPair)
                     if c not in visited:
                         stack.append(c)
 
-        return result
+        return num_swaps, result
 
 
 class NOUN_RELCL_Swapper(Swapper):
@@ -573,6 +584,7 @@ class NOUN_RELCL_Swapper(Swapper):
     
     def swap(self, sentence, root, printPair=False):
         """ DFS function for swapping NOUN and RELCL """
+        num_swaps = 0
         result = [i for i in range(1, len(sentence) + 1)]
         stack = [root]
         visited = set()
@@ -587,11 +599,12 @@ class NOUN_RELCL_Swapper(Swapper):
                     if sentence[c-1]['coarse_dep'] in Swapper.NOUN_RELCL_ARCS:
                         noun_idx, cl_idx = node - 1, c - 1
                         if noun_idx < cl_idx: # <Noun, Relative Clause>
+                            num_swaps += 1
                             result = self.swap_pair(noun_idx, cl_idx, sentence, result, printPair)
                     if c not in visited:
                         stack.append(c)
 
-        return result
+        return num_swaps, result
 
 
 class COMP_S_Swapper(Swapper):
@@ -626,6 +639,7 @@ class COMP_S_Swapper(Swapper):
     
     def swap(self, sentence, root, printPair=False):
         """ DFS function for swapping COMP and S """
+        num_swaps = 0
         result = [i for i in range(1, len(sentence) + 1)]
         stack = [root]
         visited = set()
@@ -640,8 +654,9 @@ class COMP_S_Swapper(Swapper):
                     if sentence[c-1]['coarse_dep'] in Swapper.COMP_S_ARCS:
                         s_idx, comp_idx = node - 1, c - 1
                         if comp_idx < s_idx and sentence[comp_idx]["word"] != "to": # <Complementizer, S>
+                            num_swaps += 1
                             result = self.swap_pair(comp_idx, s_idx, sentence, result, printPair)
                     if c not in visited:
                         stack.append(c)
 
-        return result
+        return num_swaps, result
