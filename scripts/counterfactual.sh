@@ -8,7 +8,7 @@ Help()
    # Display Help
    echo "Script to run counterfactual corpus creation."
    echo
-   echo "Syntax: data.sh [-l|p|f|o]"
+   echo "Syntax: counterfactual.sh [-l|p|f|o]"
    echo "options:"
    echo "l     Language code to create counterfactual corpus. Default: en"
    echo "p     Pair <X,Y> to swap. e.g.: VO, ADP_NP. Default: VO"
@@ -18,7 +18,7 @@ Help()
    echo
 }
 
-while getopts "l:t:s:v:o:b:dh" option; do
+while getopts "l:p:f:oh" option; do
   case $option in
     l)
       language="$OPTARG"
@@ -53,6 +53,6 @@ echo "Counterfactual corpus stored at: $output_file"
 # TRAIN_SAMPLE="${TRAIN_SAMPLE:-default_value}"
 
 LANGUAGE=${language} SWAP_PAIR="${swap_pair:-'VO'}" \
-CONLLU_FILE="${conllu_file:-'./data/wiki40b-random/regular/en_sample.conllu'}" \
-OUTPUT_FILE="${output_file:-'./data/wiki40b-random/regular/en_ov_test.txt'}" \
+CONLLU_FILE="${conllu_file:-'./parse/en_train.conllu'}" \
+OUTPUT_FILE="${output_file:-'./data/wiki40b-OV/en/en_ov_train.txt'}" \
 sbatch --output="./logs/counterfactual/rev_${language}_${swap_pair}_${timestamp}.out" scripts/counterfactual.euler

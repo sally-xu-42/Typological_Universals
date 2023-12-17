@@ -45,5 +45,5 @@ echo "Parse directory: $parse_dir"
 echo "Sample directory: $sample_dir"
 
 LANGUAGE=${language} PARSE_DIR="${parse_dir:-'./parse'}" SAMPLE_DIR="${sample_dir:-'./data/wiki40b-manual'}" \
-sbatch --output="./logs/samping/sample_${language}_${timestamp}.out" scripts/sample.euler
+sbatch --output="./logs/sampling/sample_${language}_${timestamp}.out" scripts/sample.euler
 
