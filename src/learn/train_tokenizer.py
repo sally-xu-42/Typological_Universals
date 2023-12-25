@@ -38,22 +38,22 @@ def train_tokenizer(model, dataset, lang):
     # save the full model tokenizer configuration files
     model_tokenizer.save_pretrained(tokenizer_path)
 
-    # fix the gpt2 tokenizer to load correctly with huggingface
-    if model == "gpt2":
-        f1 = open(f'./data/tokenizer/{dataset}-{lang}/{model}_tokenizer/added_tokens.json')
-        added_tokens = json.load(f1)
-        os.remove(f'./data/tokenizer/{dataset}-{lang}/{model}_tokenizer/added_tokens.json')
-        print('Removed added_tokens.json')
+    # # fix the gpt2 tokenizer to load correctly with huggingface
+    # if model == "gpt2":
+    #     f1 = open(f'./data/tokenizer/{dataset}-{lang}/{model}_tokenizer/added_tokens.json')
+    #     added_tokens = json.load(f1)
+    #     os.remove(f'./data/tokenizer/{dataset}-{lang}/{model}_tokenizer/added_tokens.json')
+    #     print('Removed added_tokens.json')
 
-        f2 = open(f'./data/tokenizer/{dataset}-{lang}/{model}_tokenizer/vocab.json', 'r')
-        vocab = json.load(f2)
+    #     f2 = open(f'./data/tokenizer/{dataset}-{lang}/{model}_tokenizer/vocab.json', 'r')
+    #     vocab = json.load(f2)
 
-        for (key, value) in added_tokens.items():
-            vocab.update({key:value})
-            print(f'Added {key}:{value} to the vocabulary')
+    #     for (key, value) in added_tokens.items():
+    #         vocab.update({key:value})
+    #         print(f'Added {key}:{value} to the vocabulary')
 
-        out = open(f'./data/tokenizer/{dataset}-{lang}/{model}_tokenizer/vocab.json', 'w')
-        json.dump(vocab, out)
+    #     out = open(f'./data/tokenizer/{dataset}-{lang}/{model}_tokenizer/vocab.json', 'w')
+    #     json.dump(vocab, out)
 
     output = model_tokenizer.encode_plus(sample[lang])
     print(output.tokens(), '\n')

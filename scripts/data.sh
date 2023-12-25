@@ -21,7 +21,7 @@ Help()
    echo
 }
 
-while getopts "l:t:s:v:o:b:dh" option; do
+while getopts "l:t:s:v:o:b:d:h" option; do
   case $option in
     l)
       language="$OPTARG"

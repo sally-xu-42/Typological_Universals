@@ -10,26 +10,42 @@
 #SBATCH --mail-type=END,FAIL
 
 
-#! Work directory (i.e. where the job will run):
-workdir="/cluster/project/sachan/txu/evaluation-pipeline"
-
 #! Model directory (i.e. where the model checkpoints are saved):
 modeldir="/cluster/project/sachan/txu/Typological_Universal/checkpoints"
 
-module purge
-module load eth_proxy gcc/8.2.0 python_gpu/3.9.9
-source $workdir/venv/bin/activate
-
-export WANDB_PROJECT="babyLM"
-
+export WANDB_PROJECT="evaluation"
+export WANDB__SERVICE_WAIT=300
 
 #! Run options for the application:
 case $TASK in
 
   blimp)
+    workdir="/cluster/project/sachan/txu/evaluation-pipeline"
     prefix="python3"
     application="babylm_eval.py"
-    options="$workdir/models/${MODEL} ${MODEL_TYPE}"
+    options="$modeldir/${MODEL} ${MODEL_TYPE}"
+    ;;
+
+  blimp_checkpoints)
+    workdir="/cluster/project/sachan/txu/Typological_Universal"
+
+    for checkpoint in $workdir/checkpoints/${MODEL}/checkpoint-*; do
+      if [ "$MODEL_TYPE" = decoder ]
+      then
+        echo -e "\nFixing tokenizer config for $checkpoint"
+        python3 ./src/learn/fix_tokenizer.py --path $checkpoint
+      fi
+
+      CMD="${workdir}/scripts/evaluate.sh -t blimp -m ${checkpoint#*checkpoints/} -e ${MODEL_TYPE}"
+      echo $CMD
+      eval $CMD
+      sleep 480
+    done
+    echo -e "\n"
+
+    prefix=""
+    application="echo"
+    options="Started evaluation for each checkpoint of ${MODEL}"
     ;;
 
   glue)
@@ -44,15 +60,17 @@ case $TASK in
 esac
 
 
-cd $workdir
-echo -e "Changed directory to `pwd`.\n"
-
+module purge
+module load eth_proxy gcc/8.2.0 python_gpu/3.9.9
+source $workdir/env2/bin/activate
 
 echo -e "JobID: $SLURM_JOB_ID\n======"
 echo "Time: `date`"
 echo "Running on master node: `hostname`"
 echo "Current directory: `pwd`"
 
+cd $workdir
+echo -e "Changed directory to `pwd`.\n"
 
 CMD="$prefix $workdir/$application $options"
 echo -e "\nExecuting command:\n==================\n$CMD\n"

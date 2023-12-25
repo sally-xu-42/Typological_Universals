@@ -1,11 +1,12 @@
 import argparse
 from corpus_iterator_funchead import CorpusIteratorFuncHead
-from swapper import Swapper, VOSwapper, ADP_NP_Swapper, COP_PRED_Swapper, AUX_V_Swapper, NOUN_G_Swapper, COMP_S_Swapper
+from swapper import Swapper, VOSwapper, ADP_NP_Swapper, COP_PRED_Swapper, AUX_V_Swapper, NOUN_G_Swapper, COMP_S_Swapper, \
+                    NOUN_RELCL_Swapper, VO_ADP_NP_Swapper
 
 VO_LANG = ["en"]
 OV_LANG = ["ja", "zh-cn", "ko"]
 NON_SPACE_LANG = ["ja", "ko", "zh-cn"]
-REV_PAIR_ORDERS = ["VO", "ADP_NP", "COP_PRED", "AUX_V", "NOUN_G", "COMP_S"]
+REV_PAIR_ORDERS = ["VO", "ADP_NP", "COP_PRED", "AUX_V", "NOUN_G", "COMP_S", "NOUN_RELCL", "VO_ADP_NP"]
 
 def create_swapper(pair, order, space, upsample):
     """ factory function for instantiating the actual Swapper object """
@@ -21,6 +22,10 @@ def create_swapper(pair, order, space, upsample):
         return NOUN_G_Swapper(order, space, upsample)
     elif pair == "COMP_S":
         return COMP_S_Swapper(order, space, upsample)
+    elif pair == "NOUN_RELCL":
+        return NOUN_RELCL_Swapper(order, space, upsample)
+    elif pair == "VO_ADP_NP":
+        return VO_ADP_NP_Swapper(order, space, upsample)
     else:
         return Swapper(order, space, upsample)
 
