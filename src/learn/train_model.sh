@@ -28,6 +28,10 @@ case $MODEL in
   gpt2)
     application="train_gpt2.sh"
     ;;
+  
+  ltgbert)
+    application="train_ltgbert.sh"
+    ;;
 
   roberta)
     application="train_roberta.sh"

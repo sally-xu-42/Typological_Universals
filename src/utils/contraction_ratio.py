@@ -28,7 +28,7 @@ def count_sentences_with_contractions(file_path):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Count sentences with contractions in a text file.')
-    parser.add_argument('file_path', help='Path to the text file')
+    parser.add_argument('--file_path', help='Path to the text file')
     args = parser.parse_args()
 
     result = count_sentences_with_contractions(args.file_path)

@@ -24,7 +24,7 @@ def check_conj(i, p_idx, grandp_idx, sentence):
     sentence[p_idx]["head"] = i + 1
 
     sentence[i]["dep"] = sentence[p_idx]["dep"]
-    sentence[p_idx]["deprel"] = "lifted_cc"
+    sentence[p_idx]["dep"] = "lifted_cc"
     assert sentence[i]["index"] == i + 1
 
     sentence[p_idx]["conj"] = grandp_idx

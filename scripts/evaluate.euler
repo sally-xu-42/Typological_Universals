@@ -61,8 +61,8 @@ esac
 
 
 module purge
-module load eth_proxy gcc/8.2.0 python_gpu/3.9.9
-source $workdir/env2/bin/activate
+module load eth_proxy gcc/8.2.0 python_gpu/3.10.4
+source $workdir/venv/bin/activate
 
 echo -e "JobID: $SLURM_JOB_ID\n======"
 echo "Time: `date`"

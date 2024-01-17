@@ -8,7 +8,7 @@ class Swapper():
 
     ADP_NP_ARCS = ["case"]
     ADP_POS = ["ADP"]
-    NP_POS = ["NOUN", "PROPN"]
+    NP_POS = ["NOUN", "PROPN", "NUM", "PRON"]
 
     COP_PRED_ARCS = ["lifted_cop"]
 
@@ -16,9 +16,11 @@ class Swapper():
 
     NOUN_G_ARCS = ["nmod"]
 
-    NOUN_RELCL_ARCS = ["acl"]
+    NOUN_RELCL_ARCS = ["acl:relcl"]
 
     COMP_S_ARCS = ["mark"]
+
+    COARSE_EXCEPTIONS = ["acl:relcl"]
 
     def __init__(self, pair, order=1, space=True, upsample=False):
 
@@ -35,6 +37,9 @@ class Swapper():
         self.SPECIAL_CONJ = True if pair in ["AUX_V", "ADP_NP", "COMP_S"] else False # special case for conj
 
     def makeCoarse(self, x):
+        # leave exceptions
+        if x in Swapper.COARSE_EXCEPTIONS:
+            return x
         if ":" in x:
             return x[: x.index(":")]
         return x

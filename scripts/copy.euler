@@ -9,8 +9,11 @@
 #SBATCH --mail-type=END,FAIL
 
 # Source and destination directories
-source_directory="/cluster/work/sachan/txu/Typological_Universal"
-destination_directory="/cluster/project/sachan/txu/Typological_Universal_new"
+source_directory="/cluster/project/sachan/txu/Typological_Universal"
+destination_directory="/cluster/project/cotterell/txu/Typological_Universal"
+
+# Checkpoints directory to exclude
+exclude_directory="checkpoints"
 
 # Check if the source directory exists
 if [ ! -d "$source_directory" ]; then
@@ -24,7 +27,7 @@ if [ ! -d "$destination_directory" ]; then
 fi
 
 # Use rsync with progress information
-rsync -ah --info=progress2 "$source_directory/" "$destination_directory/" | {
+rsync -ah --info=progress2 --exclude="$exclude_directory" "$source_directory/" "$destination_directory/" | {
   IFS="%"
   while read -r line; do
     # Extract the percentage from rsync's output
