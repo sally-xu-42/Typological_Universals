@@ -153,7 +153,7 @@ class Swapper():
                 continue
 
             headIndex = line["head"] - 1
-            if line["coarse_dep"] == "nsubj":
+            if line["coarse_dep"] in ["nsubj", "csubj"]:
                 if self.SPECIAL_EXPL and \
                     sentence[headIndex].get("expl", float("inf")) < line["index"]:
                         # change the other nsubj into obj
