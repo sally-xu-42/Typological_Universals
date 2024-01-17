@@ -75,7 +75,7 @@ class Swapper():
                 if i > 0 and sentence[i-1]['word'].isdigit() and word['head'] == i:
                     print("Stanza has made an error in dates")
                     # Assign the day's dependency to the month (making the month the head)
-                    word["coarse_dep"] = sentence[i-1]["coarse_dep"]
+                    word["dep"] = sentence[i-1]["dep"]
                     sentence[i-1]['coarse_dep'] = 'nummod'  # or whatever the correct relation should be
                     word["head"] = sentence[i-1]['head']
                     sentence[i-1]['head'] = i+1 # Assuming 'head' is 1-indexed and pointing to the current month.
