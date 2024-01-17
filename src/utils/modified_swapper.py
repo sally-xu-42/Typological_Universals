@@ -127,7 +127,7 @@ class Swapper():
                 for c in sentence[node-1]['children']:
                     if depth == 0 and self.check_conjunction(c, node, sentence):
                         continue
-                    if depth == 0 and self.pair in ["AUX_V"] and sentence[c-1]["coarse_dep"] == "advcl":
+                    if depth == 0 and self.pair in ["AUX_V"] and sentence[c-1]["coarse_dep"] in ["advcl", "nsubj", "csubj"]:
                         continue
                     stack.append((c, depth+1)) # increment depth
                     res.append(c)
@@ -153,7 +153,7 @@ class Swapper():
                 continue
 
             headIndex = line["head"] - 1
-            if line["coarse_dep"] in ["nsubj", "csubj"]:
+            if line["coarse_dep"] in ["nsubj", "csubj"]: # added csubj, not sure about examples with expl
                 if self.SPECIAL_EXPL and \
                     sentence[headIndex].get("expl", float("inf")) < line["index"]:
                         # change the other nsubj into obj
