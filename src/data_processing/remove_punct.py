@@ -45,7 +45,7 @@ def remove_punct_and_lowercase(input_file, output_file, nlp, language):
                 if language == 'ja':
                     # For Japanese, just concatenate the words without spaces
                     sentence_text = "".join(word.text for word in sentence.words)
-                    processed_sentence = remove_japanese_punctuation(sentence_text)
+                    processed_sentence = remove_japanese_punctuation(sentence_text) + "。"
                 else:
                     # Remove punctuation from each word and then join them into a sentence
                     words_without_punct = [word.text.translate(str.maketrans('', '', string.punctuation)) for word in sentence.words if word.text.translate(str.maketrans('', '', string.punctuation))]
