@@ -26,7 +26,7 @@ def sanity_check():
     else:
         print(f"Stanza version {actual_version} is compatible. Proceed with tokenizing.")
 
-def remove_punct_and_lowercase(input_file, output_file, nlp): 
+def remove_punct_and_lowercase(input_file, output_file, nlp, language): 
 
     with open(input_file, 'r', encoding='utf-8') as f_in, open(output_file, 'w', encoding='utf-8') as f_out:
         for line in f_in:
@@ -39,10 +39,14 @@ def remove_punct_and_lowercase(input_file, output_file, nlp):
             for sentence in doc.sentences:
                 # Remove punctuation from each word and then join them into a sentence
                 words_without_punct = [word.text.translate(str.maketrans('', '', string.punctuation)) for word in sentence.words if word.text.translate(str.maketrans('', '', string.punctuation))]
-                sentence_text = " ".join(words_without_punct)
 
-                # Lowercase the sentence and add a period at the end
-                processed_sentence = sentence_text.lower().strip() + ". "
+                if language == 'ja':
+                    # For Japanese, just concatenate the words without spaces
+                    processed_sentence = "".join(words_without_punct)
+                else:
+                    # For other languages, join words with spaces and lowercase the sentence
+                    processed_sentence = " ".join(words_without_punct).lower().strip() + ". "
+
                 f_out.write(processed_sentence)
             f_out.write("\n")
 
@@ -91,7 +95,7 @@ if __name__ == "__main__":
 
     # Process each file
     for in_file, out_file in zip(input_path, output_path):
-        remove_punct_and_lowercase(in_file, out_file, nlp)
+        remove_punct_and_lowercase(in_file, out_file, nlp, args.language)
     
     sys.stderr.write("Job finished!")
 
