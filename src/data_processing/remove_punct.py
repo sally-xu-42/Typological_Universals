@@ -26,6 +26,11 @@ def sanity_check():
     else:
         print(f"Stanza version {actual_version} is compatible. Proceed with tokenizing.")
 
+def remove_japanese_punctuation(text):
+    # List of common Japanese punctuation characters
+    japanese_punctuation = "。、・「」『』（）〔〕【】〈〉《》「」『』【】［］｛｝〝〟〰–—‛“”‘’‹›«»‐‑‒―⁃−"
+    return ''.join(char for char in text if char not in japanese_punctuation)
+
 def remove_punct_and_lowercase(input_file, output_file, nlp, language): 
 
     with open(input_file, 'r', encoding='utf-8') as f_in, open(output_file, 'w', encoding='utf-8') as f_out:
@@ -37,13 +42,13 @@ def remove_punct_and_lowercase(input_file, output_file, nlp, language):
             
             doc = nlp(line)
             for sentence in doc.sentences:
-                # Remove punctuation from each word and then join them into a sentence
-                words_without_punct = [word.text.translate(str.maketrans('', '', string.punctuation)) for word in sentence.words if word.text.translate(str.maketrans('', '', string.punctuation))]
-
                 if language == 'ja':
                     # For Japanese, just concatenate the words without spaces
-                    processed_sentence = "".join(words_without_punct)
+                    sentence_text = "".join(word.text for word in sentence.words)
+                    processed_sentence = remove_japanese_punctuation(sentence_text)
                 else:
+                    # Remove punctuation from each word and then join them into a sentence
+                    words_without_punct = [word.text.translate(str.maketrans('', '', string.punctuation)) for word in sentence.words if word.text.translate(str.maketrans('', '', string.punctuation))]
                     # For other languages, join words with spaces and lowercase the sentence
                     processed_sentence = " ".join(words_without_punct).lower().strip() + ". "
 
@@ -83,7 +88,7 @@ if __name__ == "__main__":
     print(f'Loaded Stanza {args.language} model...')
 
     # File names
-    input_files = [f"{args.language}_train.txt", f"{args.language}_test.txt", f"{args.language}_validation.txt"]
+    input_files = [f"{args.language}_{split}.txt" for split in ["train", "test", "validation"]]
     output_files = [f"processed_{file}" for file in input_files]
 
     if not os.path.exists(args.output_dir):
@@ -98,4 +103,3 @@ if __name__ == "__main__":
         remove_punct_and_lowercase(in_file, out_file, nlp, args.language)
     
     sys.stderr.write("Job finished!")
-
