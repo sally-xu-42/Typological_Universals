@@ -17,6 +17,7 @@ import numpy as np
 import re
 import argparse
 import os
+import MeCab
 
 r1 = "_START_ARTICLE_\n[^_]*"
 r2 = "_START_PARAGRAPH_\n"
@@ -33,6 +34,8 @@ def process_tf_dataset(ds, num_tokens, output_file, lang_code):
 
     token_count = 0
     # print(num_tokens)
+    if lang_code == "ja":
+        mecab = MeCab.Tagger("-Owakati")
 
     with open(output_file, "a") as f:
         # Turn to a numpy df so that we can easily extract text
@@ -45,9 +48,11 @@ def process_tf_dataset(ds, num_tokens, output_file, lang_code):
                 f.write(text)
                 f.write("\n")
                 # Create different way of counting number of words for Chinese, Japanese and Korean
-                if lang_code in LANG_CODE_LIST:
-                    text_no_punc = re.sub(r'[^\w\s]', '', text)
-                    token_count += len(text_no_punc)
+                if lang_code == "ja":
+                    # text_no_punc = re.sub(r'[^\w\s]', '', text)
+                    # token_count += len(text_no_punc)
+                    segmented_text = mecab.parse(text)
+                    token_count += len(segmented_text.split())
                 else:
                     token_count += len(text.split())
                 if num_tokens > 0 and token_count > num_tokens:
