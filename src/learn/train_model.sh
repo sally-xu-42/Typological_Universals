@@ -3,7 +3,7 @@
 export WANDB__SERVICE_WAIT=300
 export WANDB_PROJECT=$PROJECT
 
-DATE=$(date +%d%m)
+DATE=$(date +%d%m%s)
 
 DATA_DIR="data/${DATASET}-txt"
 MODEL_NAME="${MODEL}-${CONFIG}-${LANG}-${SEED}-${DATE}"
