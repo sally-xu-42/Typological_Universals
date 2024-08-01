@@ -21,3 +21,5 @@ if __name__ == "__main__":
     with open(output_file, 'w', encoding='utf-8') as f:
         for word in advmod_words:
             f.write(word + '\n')
+
+    print(f"Words with 'advmod' deprel have been written to {output_file}")
