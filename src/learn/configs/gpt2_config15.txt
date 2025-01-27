@@ -1,1 +1,0 @@
---num_train_epochs 12 --learning_rate 7e-4 --warmup_ratio 0.05 --gradient_accumulation_steps 128

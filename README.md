@@ -1,16 +1,16 @@
-# Typological_Universal_BabyLM
+# Typological_Universal
 
-Initial repository for a thesis to verify the innate preferences of typological universals in language models trained from scratch using counterfactual grammars.
+Verify the innate preferences of typological universals in language models using counterfactual English and Japanese grammars.
 
 ## Dataset
 
-We are trying Wiki-40b English version at this point. 
+We used English and Japanese splits in Wiki-40b.
 Local: Download the data into text files by running `src/data_processing/wiki_40b.py`
 Euler: Continue reading the following sections.
 
 ## Parser
 
-A detailed README is in the `src/counterfactual` directory.
+We used Stanza to obtain dependency parses.
 
 ## Preprocessing to get clean data
 
@@ -35,8 +35,7 @@ chmod -R +x ./scripts
 chmod -R +x ./src
 ```
 
-For the Greenberg word-order correlation universals, we offer a list of SVO and SOV languages in our writeup.
-You can try Japanese (SOV) and English (SVO) for a taste.
+For the Greenberg word-order correlation universals, we experimented on Japanese (SOV) and English (SVO).
 
 ## Creating environment on Euler
 
@@ -107,14 +106,3 @@ Run the scripts from the project root.
 ### Train a model with custom configuration ###
 ./scripts/train.sh -n <model_name> -d <dataset> -l <lang> -s <seed> -p <project_name> -t <tokenizer_path> -c <ckpt_path> -f <configuration_file> -T <test_mode> -w <sweep_id>
 ```
-
-Run a sweep:
-
-```
-1. Create a new sweep yaml configuration in ./src/learn/configs folder
-2. ./scripts/sweep.sh -n <config_name> -l <lang> -p <project_name>
-3. ./scripts/train.sh -n <model_name> -l <lang> -w <sweep_id>
-
-```
-
-You can use ```squeue``` to check the status of your batch jobs, and use ```scancel <JOBID>``` to cancel jobs.
