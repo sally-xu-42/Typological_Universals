@@ -1,6 +1,6 @@
 #!/bin/bash
 
-language="en"
+language="ja"
 timestamp=$(date +%s)
 
 Help()
@@ -10,7 +10,7 @@ Help()
    echo
    echo "Syntax: data.sh [-l|t|s|v|o|b|d]"
    echo "options:"
-   echo "l     Comma-separated list of language codes to use, e.g. 'en,de,nl,hu'. Default: en"
+   echo "l     Comma-separated list of language codes to use, e.g. 'en,ja'. Default: en"
    echo "t     Max number of training examples to sample. Default: -1.0"
    echo "s     Max number of test examples to sample. Default: -1.0"
    echo "v     Max number of validation examples to sample. Default: -1.0"
@@ -67,6 +67,6 @@ echo "Path for saving dataset: $save_dir"
 # Set default value if ${TRAIN_SAMPLE} is not set or empty
 # TRAIN_SAMPLE="${TRAIN_SAMPLE:-default_value}"
 
-LANGUAGE=${language} TRAIN_SAMPLE="${train_sample:--1.0}" TEST_SAMPLE="${test_sample:--1.0}" \
-VALID_SAMPLE="${valid_sample:--1.0}" OUTPUT_DIR="${output_dir:-'./data/wiki40b-txt/'}" BATCH_SIZE="${batch_size:-128}" SAVE_DIR="${save_dir:-'./data/'}" \
+LANGUAGE=${language} TRAIN_SAMPLE="${train_sample:-100000000}" TEST_SAMPLE="${test_sample:-10000000}" \
+VALID_SAMPLE="${valid_sample:-10000000}" OUTPUT_DIR="${output_dir:-'./data/wiki40b-txt/'}" BATCH_SIZE="${batch_size:-128}" SAVE_DIR="${save_dir:-'./data/'}" \
 sbatch --output="./logs/processing/download_${language}_${timestamp}.out" scripts/data.euler

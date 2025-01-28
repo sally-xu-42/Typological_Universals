@@ -1,10 +1,8 @@
 #!/bin/bash
 
 #SBATCH -n 1
-#SBATCH --cpus-per-task=8
+#SBATCH --cpus-per-task=16
 #SBATCH --mem-per-cpu=16384
-#SBATCH --gpus=1
-#SBATCH --gres=gpumem:11264m
 #SBATCH --time=23:00:00
 #SBATCH --open-mode=truncate
 #SBATCH --mail-type=END,FAIL
@@ -15,7 +13,7 @@ workdir="$SLURM_SUBMIT_DIR"  # The value of SLURM_SUBMIT_DIR sets workdir to the
                              # in which sbatch is run.
 
 module purge
-module load eth_proxy gcc/8.2.0 python_gpu/3.9.9
+module load eth_proxy stack/2024-04 gcc/8.5.0 python_cuda/3.9.18
 source $workdir/env2/bin/activate
 
 

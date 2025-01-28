@@ -14,7 +14,7 @@ workdir="$SLURM_SUBMIT_DIR"  # The value of SLURM_SUBMIT_DIR sets workdir to the
                              # in which sbatch is run.
 
 module purge
-module load eth_proxy gcc/8.2.0 python_gpu/3.9.9
+module load eth_proxy stack/2024-04 gcc/8.5.0 python_cuda/3.9.18
 source $workdir/env1/bin/activate
 
 

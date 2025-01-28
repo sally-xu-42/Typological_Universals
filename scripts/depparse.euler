@@ -3,9 +3,8 @@
 #SBATCH -n 1
 #SBATCH --cpus-per-task=8
 #SBATCH --mem-per-cpu=8192
-#SBATCH --gpus=v100:1
-#SBATCH --gres=gpumem:24576m
-#SBATCH --time=120:00:00
+#SBATCH --gpus=1
+#SBATCH --time=12:00:00
 #SBATCH --job-name="parse"
 #SBATCH --open-mode=truncate
 #SBATCH --mail-type=END,FAIL
@@ -16,8 +15,9 @@ workdir="$SLURM_SUBMIT_DIR"  # The value of SLURM_SUBMIT_DIR sets workdir to the
                              # in which sbatch is run.
 
 module purge
-module load eth_proxy gcc/8.2.0 python_gpu/3.11.2
-source $workdir/venv/bin/activate  # Initialized new module and environment due to cuDNN issues with Stanza. GPU parses 30x faster than CPU
+# module load eth_proxy stack/2024-06 gcc/12.2.0 python_cuda/3.11.6
+module load eth_proxy stack/2024-04 gcc/8.5.0 python_cuda/3.9.18
+source $workdir/env2/bin/activate  # Initialized new module and environment due to cuDNN issues with Stanza. GPU parses 30x faster than CPU
 
 
 #! Run options for the application:

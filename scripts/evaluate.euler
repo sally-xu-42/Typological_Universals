@@ -1,17 +1,16 @@
 #!/bin/bash
 
 #SBATCH -n 1
-#SBATCH --cpus-per-task=8
+#SBATCH --cpus-per-task=1
 #SBATCH --mem-per-cpu=16384
-#SBATCH --gpus=4
-#SBATCH --gres=gpumem:11264m
-#SBATCH --time=23:00:00
+#SBATCH --gpus=1
+#SBATCH --time=2:00:00
 #SBATCH --open-mode=truncate
-#SBATCH --mail-type=END,FAIL
+#SBATCH --mail-type=FAIL
 
 
 #! Model directory (i.e. where the model checkpoints are saved):
-modeldir="/cluster/project/sachan/txu/Typological_Universal/checkpoints"
+modeldir="/cluster/work/cotterell/txu/Typological_Universal/checkpoints"
 
 export WANDB_PROJECT="evaluation"
 export WANDB__SERVICE_WAIT=300
@@ -20,14 +19,28 @@ export WANDB__SERVICE_WAIT=300
 case $TASK in
 
   blimp)
-    workdir="/cluster/project/sachan/txu/evaluation-pipeline"
+    workdir="/cluster/work/cotterell/txu/evaluation-pipeline"
+
+    if [ "$MODEL_TYPE" = decoder ]
+    then
+      echo -e "\nFixing tokenizer config"
+      python3 ./src/learn/fix_tokenizer.py --path $workdir/checkpoints/${MODEL}
+    fi
+
+    prefix="python3"
+    application="babylm_eval.py"
+    options="$modeldir/${MODEL} ${MODEL_TYPE}"
+    ;;
+
+  jblimp)
+    workdir="/cluster/work/cotterell/txu/evaluation-pipeline"
     prefix="python3"
     application="babylm_eval.py"
     options="$modeldir/${MODEL} ${MODEL_TYPE}"
     ;;
 
   blimp_checkpoints)
-    workdir="/cluster/project/sachan/txu/Typological_Universal"
+    workdir="/cluster/work/cotterell/txu/Typological_Universal"
 
     for checkpoint in $workdir/checkpoints/${MODEL}/checkpoint-*; do
       if [ "$MODEL_TYPE" = decoder ]
@@ -39,19 +52,35 @@ case $TASK in
       CMD="${workdir}/scripts/evaluate.sh -t blimp -m ${checkpoint#*checkpoints/} -e ${MODEL_TYPE}"
       echo $CMD
       eval $CMD
-      sleep 480
+      sleep 240
     done
     echo -e "\n"
 
-    prefix=""
-    application="echo"
+    prefix="echo"
+    application=""
     options="Started evaluation for each checkpoint of ${MODEL}"
     ;;
 
-  glue)
-    prefix=""
-    application="finetune_all_tasks.sh"
-    options="$workdir/models/${MODEL} 5e-5 10 32"
+  jblimp_checkpoints)
+    workdir="/cluster/work/cotterell/txu/Typological_Universal"
+
+    for checkpoint in $workdir/checkpoints/${MODEL}/checkpoint-*; do
+      if [ "$MODEL_TYPE" = decoder ]
+      then
+        echo -e "\nFixing tokenizer config for $checkpoint"
+        python3 ./src/learn/fix_tokenizer.py --path $checkpoint
+      fi
+
+      CMD="${workdir}/scripts/evaluate.sh -t jblimp -m ${checkpoint#*checkpoints/} -e ${MODEL_TYPE}"
+      echo $CMD
+      eval $CMD
+      sleep 200
+    done
+    echo -e "\n"
+
+    prefix="echo"
+    application=""
+    options="Started evaluation for each checkpoint of ${MODEL}"
     ;;
 
   *)
@@ -59,9 +88,8 @@ case $TASK in
     ;;
 esac
 
-
 module purge
-module load eth_proxy gcc/8.2.0 python_gpu/3.10.4
+module load eth_proxy stack/2024-06 gcc/12.2.0 python_cuda/3.11.6
 source $workdir/venv/bin/activate
 
 echo -e "JobID: $SLURM_JOB_ID\n======"

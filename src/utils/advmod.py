@@ -23,3 +23,4 @@ if __name__ == "__main__":
             f.write(word + '\n')
 
     print(f"Words with 'advmod' deprel have been written to {output_file}")
+

@@ -60,6 +60,6 @@ echo "Test mode: $do_test"
 # Set default value if ${TRAIN_SAMPLE} is not set or empty
 # TRAIN_SAMPLE="${TRAIN_SAMPLE:-default_value}"
 
-LANGUAGE=${language} DATA_DIR="${data_dir:-'./data/wiki40b-txt/'}" \
-PARSE_DIR="${parse_dir:-'./parse'}" LIST_PARTITIONS="${list_partitions:-'train,test,validation'}" DO_TEST=${do_test} \
+LANGUAGE=${language} DATA_DIR="${data_dir:-'../counterfactual_BLiMP/'}" \
+PARSE_DIR="${parse_dir:-'../counterfactual_BLiMP'}" LIST_PARTITIONS="${list_partitions:-'all_samples'}" DO_TEST=${do_test} \
 sbatch --output="./logs/parsing/dep_${language}_${timestamp}.out" scripts/depparse.euler

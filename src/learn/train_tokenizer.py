@@ -3,31 +3,24 @@ import os
 import json
 
 from tokenizers import AddedToken
-from tokenizers import Tokenizer
-from tokenizers import pre_tokenizers, Regex, normalizers
-
-from tokenizers.models import WordPiece
-from tokenizers.trainers import WordPieceTrainer
 from tokenizers.implementations import ByteLevelBPETokenizer
 from transformers import AutoTokenizer
 
-
 sample = {
     "en": "Hello, y'all! How are you 😁? (just testing the tokenizer)",
-    "ja": "おやすみなさい",
-    "it": "Stiamo cercando una gioielleria."
+    "ja": "おやすみなさい"
 }
 
 
 def train_tokenizer(model, dataset, lang):
-
     bpe_tokenizer = ByteLevelBPETokenizer()
 
-    files = [f"./data/{dataset}-txt/{lang}_{split}.txt" for split in ["test", "train", "validation"]] # this is always run from root
-    
-    bpe_tokenizer.train(files=files, vocab_size=32000, min_frequency=2)  
+    files = [f"../ja_baseline/processed_{lang}_{split}.txt" for split in
+             ["test", "train", "validation"]]  # this is always run from root
 
-    tokenizer_path = f'./data/tokenizer/{dataset}-{lang}/{model}_tokenizer'
+    bpe_tokenizer.train(files=files, vocab_size=32000, min_frequency=2)
+
+    tokenizer_path = f'./data/ja_tokenizer_counterfactual/'
     if not os.path.exists(tokenizer_path):
         os.makedirs(tokenizer_path)
 
@@ -45,6 +38,7 @@ def train_tokenizer(model, dataset, lang):
     model_tokenizer.save_pretrained(tokenizer_path)
     output = model_tokenizer.encode_plus(sample[lang])
     print(output.tokens(), '\n')
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
