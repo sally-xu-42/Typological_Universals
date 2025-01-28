@@ -5,7 +5,9 @@ Verify the innate preferences of typological universals in language models using
 ## Dataset
 
 We used English and Japanese splits in Wiki-40b.
+
 Local: Download the data into text files by running `src/data_processing/wiki_40b.py`
+
 Euler: Continue reading the following sections.
 
 ## Parser
