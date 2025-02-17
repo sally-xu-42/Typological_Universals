@@ -41,6 +41,10 @@ For the Greenberg word-order correlation universals, we experimented on Japanese
 
 ## Creating environment on Slurm
 
+The experiments are conducted on ETH Cluster (Euler). 
+
+The commands should fit to every Slurm-based HPC cluster with some slight modifications cluster-wise.
+
 Make sure you are in the root of your project.
 
 If you have activated a virtual environment already, run the following command:
