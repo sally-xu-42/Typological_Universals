@@ -8,7 +8,7 @@ We used English and Japanese splits in Wiki-40b.
 
 Local: Download the data into text files by running `src/data_processing/wiki_40b.py`
 
-Euler: Continue reading the following sections.
+Slurm-based cluster: Continue reading the following sections.
 
 ## Parser
 
