@@ -39,7 +39,7 @@ chmod -R +x ./src
 
 For the Greenberg word-order correlation universals, we experimented on Japanese (SOV) and English (SVO).
 
-## Creating environment on Euler
+## Creating environment on Slurm
 
 Make sure you are in the root of your project.
 
@@ -79,8 +79,6 @@ If you need a different version of an existing package, then you can also instal
 OPENBLAS=$OPENBLAS_ROOT/lib/libopenblas.so pip install --ignore-installed --no-deps numpy==1.20.0
 ```
 
-List of existing packages on Euler:  <https://scicomp.ethz.ch/wiki/Python_on_Euler>
-
 To install required packages for this project:
 
 ```
@@ -89,7 +87,7 @@ OPENBLAS=$OPENBLAS_ROOT/lib/libopenblas.so pip install --ignore-installed --no-c
 
 You might also want to login to your wandb account (only once): ```wandb login```
 
-## Training a language model on Euler
+## Training
 
 Before running the scripts, make sure you modify the *.euler files accordingly:
 
