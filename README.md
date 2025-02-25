@@ -4,7 +4,7 @@ Verify the innate preferences of typological universals in language models using
 
 ## Colab Notebooks to Create Counterfactual Variants
 
-TBC.
+Email the authors and we will update the permissions. Our human validation sheets are also available upon request.
 
 ## Dataset
 
