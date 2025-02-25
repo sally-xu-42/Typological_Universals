@@ -2,6 +2,10 @@
 
 Verify the innate preferences of typological universals in language models using counterfactual English and Japanese grammars.
 
+## Colab Notebooks to Create Counterfactual Variants
+
+TBC.
+
 ## Dataset
 
 We used English and Japanese splits in Wiki-40b.
