@@ -26,7 +26,6 @@ def calculate_token_perplexity(input_file, model, tokenizer):
                 outputs = model(**inputs, labels=inputs["input_ids"])
                 loss = outputs.loss
                 if math.isnan(loss.item()):
-                    print("fuck")
                     continue
                 total_loss += loss.item()
                 # total_tokens += inputs["input_ids"].size(1)
